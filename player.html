@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Player / Boxscore Index</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html#overview" aria-label="Boxscore Index home">
+        <span class="brand-mark" aria-hidden="true">BI</span>
+        <span>
+          <strong>Boxscore Index</strong>
+          <small>Baseball stats, pared down</small>
+        </span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="./index.html#leaders">Leaders</a>
+        <a href="./index.html#players">Players</a>
+        <a href="./index.html#teams">Teams</a>
+      </nav>
+    </header>
+
+    <main class="player-page">
+      <section class="player-hero">
+        <img class="player-headshot" id="playerHeadshot" alt="" />
+        <div class="player-profile">
+          <h1 id="playerName">Loading player...</h1>
+          <dl class="bio-grid player-bio-grid" id="bioGrid"></dl>
+        </div>
+      </section>
+
+      <section class="panel" id="searchResultsPanel" hidden>
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Search results</p>
+            <h2>Choose a player</h2>
+          </div>
+        </div>
+        <div class="search-results" id="searchResults"></div>
+      </section>
+
+      <section class="panel" id="seasonPanel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow" id="seasonStatsLabel">Current season</p>
+          </div>
+        </div>
+        <dl class="career-table" id="seasonStats"></dl>
+      </section>
+
+      <section class="panel" id="careerPanel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Career</p>
+          </div>
+          <p id="careerStatus" class="result-count"></p>
+        </div>
+        <dl class="career-table" id="careerStats"></dl>
+      </section>
+    </main>
+
+    <script src="./data/mlb_stats.js"></script>
+    <script src="./data/advanced_batting.js"></script>
+    <script src="./player.js"></script>
+  </body>
+</html>

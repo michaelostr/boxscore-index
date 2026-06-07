@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Boxscore Index</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#overview" aria-label="Boxscore Index home">
+        <span class="brand-mark" aria-hidden="true">BI</span>
+        <span>
+          <strong>Boxscore Index</strong>
+          <small>Baseball stats, pared down</small>
+        </span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="#leaders">Leaders</a>
+        <a href="#players">Players</a>
+        <a href="#pitchers">Pitchers</a>
+        <a href="#teams">Teams</a>
+        <a href="#glossary">Glossary</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="overview" id="overview">
+        <div class="overview-copy">
+          <p class="eyebrow"><span id="seasonLabel">MLB season</span></p>
+          <h1>MLB player lookup, batting leaders, and pitchers.</h1>
+          <p>
+            Search hitters and pitchers, scan qualified batting and pitching tables, and open compact player pages with current-season and career lines.
+          </p>
+        </div>
+      </section>
+
+      <section class="toolbar search-toolbar" aria-label="Player search">
+        <form class="search-form" id="playerSearchForm">
+          <label class="search-box">
+            <span>Search</span>
+            <input id="searchInput" type="search" placeholder="Find a player or pitcher" autocomplete="off" />
+          </label>
+          <button class="icon-button" type="submit" aria-label="Open selected player" title="Open selected player">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m16 16 4 4" />
+            </svg>
+          </button>
+          <div class="search-dropdown" id="playerSearchDropdown" hidden></div>
+        </form>
+      </section>
+
+      <section class="data-status" aria-live="polite">
+        <p id="dataStatus">Loading MLB statistics...</p>
+        <a href="https://www.mlb.com/stats" target="_blank" rel="noreferrer">MLB stats source</a>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel" id="leaders">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">League leaders</p>
+              <h2>Top bats</h2>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Leaderboard metric">
+              <button class="tab is-active" type="button" data-leader="fwar">fWAR</button>
+              <button class="tab" type="button" data-leader="ops">OPS</button>
+              <button class="tab" type="button" data-leader="hr">HR</button>
+              <button class="tab" type="button" data-leader="sb">SB</button>
+            </div>
+          </div>
+          <ol class="leader-list" id="leaderList"></ol>
+        </article>
+
+        <article class="panel standings" id="teams">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Clubs</p>
+              <h2>Team snapshot</h2>
+            </div>
+          </div>
+          <div id="teamGrid" class="team-grid"></div>
+        </article>
+      </section>
+
+      <section class="panel data-panel" id="players">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Qualified hitters</p>
+            <h2>Sortable batting table</h2>
+          </div>
+          <p id="resultCount" class="result-count">0 results</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Team</th>
+                <th>Pos</th>
+                <th><button type="button" data-sort="g">G</button></th>
+                <th><button type="button" data-sort="avg">AVG</button></th>
+                <th><button type="button" data-sort="obp">OBP</button></th>
+                <th><button type="button" data-sort="slg">SLG</button></th>
+                <th><button type="button" data-sort="ops">OPS</button></th>
+                <th><button type="button" data-sort="hr">HR</button></th>
+                <th><button type="button" data-sort="rbi">RBI</button></th>
+                <th><button type="button" data-sort="sb">SB</button></th>
+                <th><button type="button" data-sort="fwar">fWAR</button></th>
+              </tr>
+            </thead>
+            <tbody id="playerRows"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <button class="secondary-button" id="toggleTableRows" type="button">Show more</button>
+        </div>
+      </section>
+
+      <section class="panel data-panel" id="pitchers">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Qualified pitchers</p>
+            <h2>Top pitching table</h2>
+          </div>
+          <p id="pitcherResultCount" class="result-count">0 results</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Team</th>
+                <th>G</th>
+                <th>GS</th>
+                <th>IP</th>
+                <th>ERA</th>
+                <th>WHIP</th>
+                <th>W</th>
+                <th>L</th>
+                <th>SV</th>
+                <th>SO</th>
+                <th>BB</th>
+              </tr>
+            </thead>
+            <tbody id="pitcherRows"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <button class="secondary-button" id="togglePitcherRows" type="button">Show more</button>
+        </div>
+      </section>
+
+      <section class="panel glossary" id="glossary">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Reference</p>
+            <h2>Stat glossary</h2>
+          </div>
+        </div>
+        <dl>
+          <div>
+            <dt>OPS</dt>
+            <dd>On-base percentage plus slugging. A quick read on reaching base and power.</dd>
+          </div>
+          <div>
+            <dt>fWAR</dt>
+            <dd>FanGraphs wins above replacement. A broad estimate of total player value.</dd>
+          </div>
+          <div>
+            <dt>wRC+</dt>
+            <dd>Weighted runs created plus. Shown on player pages when available from the local FanGraphs snapshot.</dd>
+          </div>
+          <div>
+            <dt>ISO</dt>
+            <dd>Isolated power. Slugging minus batting average.</dd>
+          </div>
+        </dl>
+      </section>
+    </main>
+
+    <aside class="drawer" id="playerDrawer" aria-hidden="true" aria-label="Player details">
+      <button class="icon-button close-drawer" id="closeDrawer" type="button" aria-label="Close player details" title="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+      <div id="drawerContent"></div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+
+    <script src="./data/mlb_stats.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
