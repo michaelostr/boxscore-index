@@ -36,6 +36,12 @@ function fmtRate(value) {
   return numeric.toFixed(3).replace(/^0/, "");
 }
 
+function fmtPitchingRate(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return numeric.toFixed(2);
+}
+
 function statBlock(label, value) {
   return `<div><dt>${label}</dt><dd>${value ?? "-"}</dd></div>`;
 }
@@ -310,8 +316,8 @@ function renderPitchingSeason(player) {
     statBlock("G", player.p_g),
     statBlock("GS", player.gs),
     statBlock("IP", player.ip),
-    statBlock("ERA", fmtRate(player.era)),
-    statBlock("WHIP", fmtRate(player.whip)),
+    statBlock("ERA", fmtPitchingRate(player.era)),
+    statBlock("WHIP", fmtPitchingRate(player.whip)),
     statBlock("W", player.wins),
     statBlock("L", player.losses),
     statBlock("SV", player.saves),
@@ -400,8 +406,8 @@ function renderCareer(stat, group = "hitting") {
       statBlock("G", stat.gamesPlayed),
       statBlock("GS", stat.gamesStarted),
       statBlock("IP", stat.inningsPitched),
-      statBlock("ERA", stat.era),
-      statBlock("WHIP", stat.whip),
+      statBlock("ERA", fmtPitchingRate(stat.era)),
+      statBlock("WHIP", fmtPitchingRate(stat.whip)),
       statBlock("W", stat.wins),
       statBlock("L", stat.losses),
       statBlock("SV", stat.saves),

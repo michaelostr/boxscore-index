@@ -65,6 +65,12 @@ function fmtRate(value) {
   return numeric.toFixed(3).replace(/^0/, "");
 }
 
+function fmtPitchingRate(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return numeric.toFixed(2);
+}
+
 function fmtNumber(value, digits = 0) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return "-";
@@ -483,8 +489,8 @@ function renderPitchingTable() {
           <td>${player.p_g}</td>
           <td>${player.gs}</td>
           <td>${player.ip}</td>
-          <td>${fmtRate(player.era)}</td>
-          <td>${fmtRate(player.whip)}</td>
+          <td>${fmtPitchingRate(player.era)}</td>
+          <td>${fmtPitchingRate(player.whip)}</td>
           <td>${player.wins}</td>
           <td>${player.losses}</td>
           <td>${player.saves}</td>
