@@ -16,7 +16,6 @@
         </span>
       </a>
       <nav aria-label="Primary">
-        <a href="#leaders">Leaders</a>
         <a href="#players">Players</a>
         <a href="#pitchers">Pitchers</a>
         <a href="#teams">Teams</a>
@@ -28,7 +27,7 @@
       <section class="overview" id="overview">
         <div class="overview-copy">
           <p class="eyebrow"><span id="seasonLabel">MLB season</span></p>
-          <h1>MLB player lookup, batting leaders, and pitchers.</h1>
+          <h1>MLB player lookup, sortable batting, and pitchers.</h1>
           <p>
             Search hitters and pitchers, scan qualified batting and pitching tables, and open compact player pages with current-season and career lines.
           </p>
@@ -56,32 +55,14 @@
         <a href="https://www.mlb.com/stats" target="_blank" rel="noreferrer">MLB stats source</a>
       </section>
 
-      <section class="section-grid">
-        <article class="panel" id="leaders">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">League leaders</p>
-              <h2>Top bats</h2>
-            </div>
-            <div class="tabs" role="tablist" aria-label="Leaderboard metric">
-              <button class="tab is-active" type="button" data-leader="fwar">fWAR</button>
-              <button class="tab" type="button" data-leader="ops">OPS</button>
-              <button class="tab" type="button" data-leader="hr">HR</button>
-              <button class="tab" type="button" data-leader="sb">SB</button>
-            </div>
+      <section class="panel standings" id="teams">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Clubs</p>
+            <h2>Team snapshot</h2>
           </div>
-          <ol class="leader-list" id="leaderList"></ol>
-        </article>
-
-        <article class="panel standings" id="teams">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Clubs</p>
-              <h2>Team snapshot</h2>
-            </div>
-          </div>
-          <div id="teamGrid" class="team-grid"></div>
-        </article>
+        </div>
+        <div id="teamGrid" class="team-grid"></div>
       </section>
 
       <section class="panel data-panel" id="players">

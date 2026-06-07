@@ -1,6 +1,6 @@
 # Boxscore Index
 
-A lightweight Baseball Reference-style MLB stats site with current-season player search, qualified batting leaders, qualified pitching tables, and compact player pages.
+A lightweight Baseball Reference-style MLB stats site with current-season player search, sortable qualified batting and pitching tables, and compact player pages.
 
 ## What It Uses
 

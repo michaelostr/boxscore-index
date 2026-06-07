@@ -320,13 +320,6 @@ svg {
   stroke-width: 2;
 }
 
-.section-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
 .panel {
   padding: clamp(15px, 2.2vw, 22px);
 }
@@ -339,80 +332,9 @@ svg {
   margin-bottom: 18px;
 }
 
-.tabs {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f3f6f4;
-}
-
-.tab {
-  min-width: 50px;
-  height: 34px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 900;
-}
-
-.tab.is-active {
-  background: var(--green);
-  color: white;
-}
-
-.tab:disabled {
-  cursor: not-allowed;
-  opacity: 0.42;
-}
-
-.leader-list {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.leader-list li {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 12px;
-  align-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fbfcfb;
-  padding: 11px 12px;
-}
-
-.rank {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  border-radius: 50%;
-  background: rgba(181, 74, 47, 0.12);
-  color: var(--clay);
-  font-weight: 900;
-}
-
-.leader-name {
-  display: block;
-  font-weight: 900;
-}
-
 .leader-meta {
   color: var(--muted);
   font-size: 0.88rem;
-}
-
-.leader-value {
-  color: var(--green-dark);
-  font-size: 1.35rem;
-  font-weight: 900;
 }
 
 .team-grid {
@@ -773,7 +695,6 @@ tbody tr:hover {
 @media (max-width: 900px) {
   .site-header,
   .overview,
-  .section-grid,
   .toolbar,
   .player-hero {
     grid-template-columns: 1fr;

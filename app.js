@@ -30,7 +30,6 @@ const state = {
   season: CURRENT_SEASON,
   sortKey: "fwar",
   sortDir: "desc",
-  leaderKey: "fwar",
   tableExpanded: false,
   pitchingExpanded: false,
   usingFallback: false
@@ -51,7 +50,6 @@ const els = {
   pitcherRows: document.querySelector("#pitcherRows"),
   pitcherResultCount: document.querySelector("#pitcherResultCount"),
   togglePitcherRows: document.querySelector("#togglePitcherRows"),
-  leaderList: document.querySelector("#leaderList"),
   teamGrid: document.querySelector("#teamGrid"),
   seasonLabel: document.querySelector("#seasonLabel"),
   dataStatus: document.querySelector("#dataStatus"),
@@ -96,12 +94,6 @@ function fmtFwar(player) {
 function statValue(player, key) {
   if (key === "fwar" || key === "war") return fwarValue(player);
   return player?.[key];
-}
-
-function fmtStatValue(player, key) {
-  if (key === "ops" || key === "avg" || key === "obp" || key === "slg") return fmtRate(player[key]);
-  if (key === "fwar" || key === "war") return fmtFwar(player);
-  return statValue(player, key) ?? "-";
 }
 
 function inningsToOuts(value) {
@@ -504,31 +496,6 @@ function renderPitchingTable() {
     .join("");
 }
 
-function renderLeaders() {
-  updateLeaderTabs();
-  const qualified = qualifiedPlayers();
-  const leaders = qualified
-    .sort((a, b) => Number(statValue(b, state.leaderKey) ?? -1) - Number(statValue(a, state.leaderKey) ?? -1))
-    .slice(0, 5);
-
-  els.leaderList.innerHTML = leaders
-    .map((player, index) => {
-      const value = fmtStatValue(player, state.leaderKey);
-      const team = teamById[player.team] ?? {};
-      return `
-        <li>
-          <span class="rank">${index + 1}</span>
-          <span>
-            <span class="leader-name">${player.name}</span>
-            <span class="leader-meta">${team.name ?? player.teamAbbr} / ${player.pos} / ${player.pa ?? "-"} PA</span>
-          </span>
-          <span class="leader-value">${value ?? "-"}</span>
-        </li>
-      `;
-    })
-    .join("");
-}
-
 function gamesPlayedForQualification() {
   const mlbTeams = teams.filter((team) => team.league === "AL" || team.league === "NL");
   const records = mlbTeams
@@ -552,18 +519,6 @@ function qualifiedPlayers() {
   }
   const minimumPa = qualifiedPlateAppearances();
   return hitters.filter((player) => Number(player.pa ?? 0) >= minimumPa);
-}
-
-function updateLeaderTabs() {
-  const hasWar = hasFwar();
-  const warTab = document.querySelector('[data-leader="fwar"]');
-  if (warTab) warTab.disabled = !hasWar;
-  if (!hasWar && state.leaderKey === "fwar") {
-    state.leaderKey = "ops";
-  }
-  document.querySelectorAll(".tab").forEach((tab) => {
-    tab.classList.toggle("is-active", tab.dataset.leader === state.leaderKey);
-  });
 }
 
 function renderTeams() {
@@ -699,7 +654,6 @@ function closeDrawer() {
 function renderAll() {
   renderTable();
   renderPitchingTable();
-  renderLeaders();
   renderTeams();
   renderSummary();
   renderPlayerSuggestions();
@@ -759,14 +713,6 @@ document.querySelectorAll("th button").forEach((button) => {
     state.sortDir = state.sortKey === nextSort && state.sortDir === "desc" ? "asc" : "desc";
     state.sortKey = nextSort;
     renderTable();
-  });
-});
-
-document.querySelectorAll(".tab").forEach((button) => {
-  button.addEventListener("click", () => {
-    state.leaderKey = button.dataset.leader;
-    document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("is-active", tab === button));
-    renderLeaders();
   });
 });
 
