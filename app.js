@@ -458,6 +458,11 @@ function nextRowLimit(current) {
   return [50, 100, 200, 500, Infinity].find(limit => limit > current) ?? Infinity;
 }
 
+function previousRowLimit(current, total = Infinity) {
+  const visible = Math.min(current, total);
+  return [500, 200, 100, 50, DEFAULT_TABLE_ROWS].find(limit => limit < visible) ?? DEFAULT_TABLE_ROWS;
+}
+
 function updateRowControls(more, less, visible, total) {
   more.hidden = visible >= total;
   less.hidden = visible <= DEFAULT_TABLE_ROWS;
@@ -724,7 +729,7 @@ els.moreBatters.addEventListener("click", () => {
 });
 
 els.fewerBatters.addEventListener("click", () => {
-  state.battingRowLimit = DEFAULT_TABLE_ROWS;
+  state.battingRowLimit = previousRowLimit(state.battingRowLimit, filteredPlayers().length);
   renderTable();
 });
 
@@ -734,7 +739,7 @@ els.morePitchers.addEventListener("click", () => {
 });
 
 els.fewerPitchers.addEventListener("click", () => {
-  state.pitchingRowLimit = DEFAULT_TABLE_ROWS;
+  state.pitchingRowLimit = previousRowLimit(state.pitchingRowLimit, qualifiedPitchers().length);
   renderPitchingTable();
 });
 

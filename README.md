@@ -24,7 +24,7 @@ python scripts/update_mlb_stats.py --season 2026
 
 The site will try live MLB.com data first in the browser, then use local snapshots as a fallback.
 
-Home batting and pitching leader tables show 10 qualified players initially. Show more expands independently through 50, 100, 200, 500, and all qualified players. Show less appears whenever more than 10 rows are visible and resets the table to 10. Show more disappears when all available rows are shown. Limits apply after sorting and do not limit the player search pool. Run `node scripts/test_home_row_limits.cjs` for row-limit checks.
+Home batting and pitching leader tables show 10 qualified players initially. Show more expands independently through 50, 100, 200, 500, and all qualified players. Show less appears whenever more than 10 rows are visible and steps back to the preceding size (100 to 50, then 10). When the full list is shorter than a step, Show less uses the number actually displayed to choose the next smaller size. Show more disappears when all available rows are shown. Limits apply after sorting and do not limit the player search pool. Run `node scripts/test_home_row_limits.cjs` for row-limit checks.
 
 Player pages load MLB regular-season, season-by-season batting and pitching history along with career totals. Traded seasons include MLB's official combined totals followed by team stints. Historical WAR is displayed only when that season has a saved official snapshot; team stints do not repeat full-season WAR.
 

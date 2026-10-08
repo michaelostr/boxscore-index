@@ -37,6 +37,13 @@ for (const expected of [50, 100, 180]) {
   assert.equal(elements.get('#fewerBatters').hidden, false);
 }
 assert.equal(elements.get('#moreBatters').hidden, true);
+for (const expected of [100, 50]) {
+  elements.get('#fewerBatters').handlers.click();
+  assert.equal(rowCount('#playerRows'), expected);
+  assert.equal(rowCount('#pitcherRows'), 10);
+  assert.equal(elements.get('#fewerBatters').hidden, false);
+  assert.equal(elements.get('#moreBatters').hidden, false);
+}
 elements.get('#fewerBatters').handlers.click();
 assert.equal(rowCount('#playerRows'), 10);
 assert.equal(elements.get('#fewerBatters').hidden, true);
@@ -50,6 +57,12 @@ assert.equal(rowCount('#playerRows'), 10);
 elements.get('#morePitchers').handlers.click();
 assert.equal(rowCount('#pitcherRows'), 120);
 assert.equal(elements.get('#morePitchers').hidden, true);
+for (const expected of [100, 50]) {
+  elements.get('#fewerPitchers').handlers.click();
+  assert.equal(rowCount('#pitcherRows'), expected);
+  assert.equal(rowCount('#playerRows'), 10);
+  assert.equal(elements.get('#fewerPitchers').hidden, false);
+}
 elements.get('#fewerPitchers').handlers.click();
 assert.equal(rowCount('#pitcherRows'), 10);
 assert.equal(elements.get('#fewerPitchers').hidden, true);
@@ -58,6 +71,10 @@ assert.doesNotMatch(elements.get('#pitcherRows').innerHTML, /Unqualified/);
 assert.equal(vm.runInContext('players.length', context), 302);
 assert.equal(vm.runInContext('nextRowLimit(200)', context), 500);
 assert.equal(vm.runInContext('nextRowLimit(500)', context), Infinity);
+assert.equal(vm.runInContext('previousRowLimit(100)', context), 50);
+assert.equal(vm.runInContext('previousRowLimit(Infinity, 800)', context), 500);
+assert.equal(vm.runInContext('previousRowLimit(Infinity, 180)', context), 100);
+assert.equal(vm.runInContext('previousRowLimit(500, 70)', context), 50);
 vm.runInContext('players = fixture.slice(0, 6); renderTable();', context);
 assert.equal(rowCount('#playerRows'), 6);
 assert.equal(elements.get('#moreBatters').hidden, true);
