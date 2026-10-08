@@ -14,15 +14,12 @@ const els = {
   bio: document.querySelector("#bioGrid"),
   season: document.querySelector("#seasonStats"),
   seasonLabel: document.querySelector("#seasonStatsLabel"),
-  career: document.querySelector("#careerStats"),
-  careerStatus: document.querySelector("#careerStatus"),
   historyPanel: document.querySelector("#historyPanel"),
   historyStatus: document.querySelector("#historyStatus"),
   resultsPanel: document.querySelector("#searchResultsPanel"),
   results: document.querySelector("#searchResults"),
   bioPanel: document.querySelector("#bioGrid"),
-  seasonPanel: document.querySelector("#seasonPanel"),
-  careerPanel: document.querySelector("#careerPanel")
+  seasonPanel: document.querySelector("#seasonPanel")
 };
 
 function normalizeSearchText(value) {
@@ -114,66 +111,6 @@ function fmtIndexStat(value) {
   return numeric == null ? "-" : String(Math.round(numeric));
 }
 
-function singles(player) {
-  return Math.max(
-    Number(player.hits ?? 0) -
-      Number(player.doubles ?? 0) -
-      Number(player.triples ?? 0) -
-      Number(player.hr ?? 0),
-    0
-  );
-}
-
-function estimatedWoba(player) {
-  const ab = Number(player.ab ?? 0);
-  const bb = Number(player.bb ?? 0);
-  const denominator = ab + bb;
-  if (!denominator) return null;
-  const value =
-    0.69 * bb +
-    0.89 * singles(player) +
-    1.27 * Number(player.doubles ?? 0) +
-    1.62 * Number(player.triples ?? 0) +
-    2.1 * Number(player.hr ?? 0);
-  return value / denominator;
-}
-
-function estimatedWrcPlus(player) {
-  const playerWoba = estimatedWoba(player);
-  if (!playerWoba) return null;
-  const league = players.reduce(
-    (totals, item) => {
-      totals.ab += Number(item.ab ?? 0);
-      totals.bb += Number(item.bb ?? 0);
-      totals.singles += singles(item);
-      totals.doubles += Number(item.doubles ?? 0);
-      totals.triples += Number(item.triples ?? 0);
-      totals.hr += Number(item.hr ?? 0);
-      return totals;
-    },
-    { ab: 0, bb: 0, singles: 0, doubles: 0, triples: 0, hr: 0 }
-  );
-  const denominator = league.ab + league.bb;
-  if (!denominator) return null;
-  const leagueWoba =
-    (0.69 * league.bb +
-      0.89 * league.singles +
-      1.27 * league.doubles +
-      1.62 * league.triples +
-      2.1 * league.hr) /
-    denominator;
-  return leagueWoba ? Math.round((playerWoba / leagueWoba) * 100) : null;
-}
-
-function wrcLabelAndValue(player) {
-  const advanced = advancedStatsForPlayer(player);
-  const actual = advanced?.wrc ?? player.wrc;
-  const actualValue = finiteValue(actual);
-  if (actualValue != null) {
-    return ["wRC+", fmtIndexStat(actualValue)];
-  }
-  return ["wRC+ est.", fmtIndexStat(estimatedWrcPlus(player))];
-}
 
 async function fetchLivePlayers() {
   const search = new URLSearchParams({
@@ -288,12 +225,9 @@ function renderSearchResults(matches) {
   els.resultsPanel.hidden = false;
   els.bioPanel.hidden = true;
   els.seasonPanel.hidden = true;
-  els.careerPanel.hidden = true;
   els.name.textContent = "Player search";
   els.bio.innerHTML = "";
   els.season.innerHTML = "";
-  els.career.innerHTML = "";
-  els.careerStatus.textContent = "";
   els.results.innerHTML = matches
     .map((player) => {
       const team = teamById[player.team] ?? {};
@@ -310,44 +244,28 @@ function renderSearchResults(matches) {
 }
 
 function renderSeason(player) {
-  const [wrcLabel, wrcValue] = wrcLabelAndValue(player);
+  const wrc = finiteValue(advancedStatsForPlayer(player)?.wrc ?? player.wrc);
   els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season`;
   els.season.innerHTML = [
-    statBlock("G", player.g),
-    statBlock("PA", player.pa),
     statBlock("AVG", fmtRate(player.avg)),
-    statBlock("OBP", fmtRate(player.obp)),
-    statBlock("SLG", fmtRate(player.slg)),
     statBlock("OPS", fmtRate(player.ops)),
-    statBlock(wrcLabel, wrcValue),
-    warBlock(player, "fwar", "Batting"),
-    warBlock(player, "bwar", "Batting"),
     statBlock("HR", player.hr),
     statBlock("RBI", player.rbi),
-    statBlock("SB", player.sb),
-    statBlock("H", player.hits),
-    statBlock("BB", player.bb),
-    statBlock("SO", player.so)
+    ...(wrc == null ? [] : [statBlock("wRC+", fmtIndexStat(wrc))]),
+    warBlock(player, "fwar", "Batting"),
+    warBlock(player, "bwar", "Batting")
   ].join("");
 }
 
 function renderPitchingSeason(player) {
   els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season`;
   els.season.innerHTML = [
-    warBlock(player, "fwar", "Pitching"),
-    warBlock(player, "bwar", "Pitching"),
-    statBlock("G", player.p_g),
-    statBlock("GS", player.gs),
     statBlock("IP", player.ip),
     statBlock("ERA", fmtPitchingRate(player.era)),
     statBlock("WHIP", fmtPitchingRate(player.whip)),
-    statBlock("W", player.wins),
-    statBlock("L", player.losses),
-    statBlock("SV", player.saves),
     statBlock("SO", player.p_so),
-    statBlock("BB", player.p_bb),
-    statBlock("H", player.p_hits),
-    statBlock("ER", player.er)
+    warBlock(player, "fwar", "Pitching"),
+    warBlock(player, "bwar", "Pitching")
   ].join("");
 }
 
@@ -511,8 +429,22 @@ function renderHistory(person, player) {
         historyWar(player, row, "fwar", group), historyWar(player, row, "bwar", group)];
       return `<tr class="${row.isTotal ? "history-total" : row.isStint ? "history-stint" : ""}"><th scope="row">${escapeHistory(row.season)}</th>${values.map((value) => `<td>${escapeHistory(value)}</td>`).join("")}</tr>`;
     }).join("");
+    const career = careerStatsFromPerson(person, group);
+    const values = career ? ["-", "-", ...columns.map(([, field]) => career[field]),
+      careerWar(player, rows, "fwar", group), careerWar(player, rows, "bwar", group)] : [];
+    document.querySelector(`#${key}HistoryTotals`).innerHTML = career
+      ? `<tr><th scope="row">Career</th>${values.map((value) => `<td>${escapeHistory(value)}</td>`).join("")}</tr>` : "";
   }
   els.historyStatus.textContent = count ? "" : "No MLB regular-season history available.";
+}
+
+function careerWar(player, rows, measure, group) {
+  const seasons = [...new Set(rows.map((row) => String(row.season)))];
+  const role = group === "pitching" ? "Pitching" : "Batting";
+  const id = String(player.mlbId ?? player.id);
+  const values = seasons.map((season) => finiteValue(window.WAR_DATA?.seasons?.[season]?.sources?.[measure + role]?.players?.[id]));
+  if (!values.length || values.some((value) => value == null)) return "-";
+  return values.reduce((sum, value) => sum + value, 0).toFixed(1);
 }
 
 function renderBio(person, localPlayer) {
@@ -529,48 +461,9 @@ function renderBio(person, localPlayer) {
   ].join("");
 }
 
-function renderCareer(stat, group = "hitting") {
-  if (!stat) {
-    els.careerStatus.textContent = "Career stats unavailable from MLB right now.";
-    return;
-  }
-  els.careerStatus.textContent = "";
-  if (group === "pitching") {
-    els.career.innerHTML = [
-      statBlock("G", stat.gamesPlayed),
-      statBlock("GS", stat.gamesStarted),
-      statBlock("IP", stat.inningsPitched),
-      statBlock("ERA", fmtPitchingRate(stat.era)),
-      statBlock("WHIP", fmtPitchingRate(stat.whip)),
-      statBlock("W", stat.wins),
-      statBlock("L", stat.losses),
-      statBlock("SV", stat.saves),
-      statBlock("SO", stat.strikeOuts),
-      statBlock("BB", stat.baseOnBalls),
-      statBlock("H", stat.hits),
-      statBlock("ER", stat.earnedRuns)
-    ].join("");
-    return;
-  }
-  els.career.innerHTML = [
-    statBlock("G", stat.gamesPlayed),
-    statBlock("AB", stat.atBats),
-    statBlock("AVG", stat.avg),
-    statBlock("OBP", stat.obp),
-    statBlock("SLG", stat.slg),
-    statBlock("OPS", stat.ops),
-    statBlock("HR", stat.homeRuns),
-    statBlock("RBI", stat.rbi),
-    statBlock("SB", stat.stolenBases),
-    statBlock("H", stat.hits),
-    statBlock("BB", stat.baseOnBalls),
-    statBlock("SO", stat.strikeOuts)
-  ].join("");
-}
 
-async function loadCareer(player, group = "hitting") {
+async function loadCareer(player) {
   if (!player.mlbId) {
-    els.careerStatus.textContent = "Career stats unavailable from MLB right now.";
     els.historyStatus.textContent = "Season history unavailable from MLB right now.";
     return;
   }
@@ -581,10 +474,8 @@ async function loadCareer(player, group = "hitting") {
     const person = data.people?.[0];
     if (!person) throw new Error("player not found");
     renderBio(person, player);
-    renderCareer(careerStatsFromPerson(person, group), group);
     renderHistory(person, player);
   } catch (error) {
-    els.careerStatus.textContent = "Career stats unavailable from MLB right now.";
     els.historyStatus.textContent = "Season history unavailable from MLB right now.";
   }
 }
@@ -597,7 +488,7 @@ async function loadPitcherById() {
     const pitcher = pitchers.find((item) => String(item.mlbId ?? item.id) === String(id));
     if (!pitcher) return false;
     renderLocalPitcher(pitcher);
-    loadCareer(pitcher, "pitching");
+    loadCareer(pitcher);
     return true;
   } catch (error) {
     return false;
@@ -634,9 +525,7 @@ if (player) {
       document.querySelector("#statcastPanel").hidden = true;
       els.bioPanel.hidden = true;
       els.seasonPanel.hidden = true;
-      els.careerPanel.hidden = true;
       els.historyPanel.hidden = true;
-      els.careerStatus.textContent = "";
     });
   }
 }
