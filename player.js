@@ -265,6 +265,7 @@ function searchMatches() {
 }
 
 function renderSearchResults(matches) {
+  document.querySelector("#statcastPanel").hidden = true;
   els.resultsPanel.hidden = false;
   els.bioPanel.hidden = true;
   els.seasonPanel.hidden = true;
@@ -331,6 +332,50 @@ function renderPitchingSeason(player) {
 function renderPlayerHeader(player) {
   els.name.textContent = player.name;
   renderHeadshot(player);
+  renderStatcast(player);
+}
+
+function renderStatcast(player) {
+  const panel = document.querySelector("#statcastPanel");
+  const season = Number(params.get("season") || snapshot.season || new Date().getFullYear());
+  const pitching = params.get("type") === "pitching" || player.hasBatting === false;
+  const sources = window.STATCAST_DATA?.seasons?.[String(season)]?.sources ?? {};
+  const id = String(player.mlbId ?? player.id);
+  const role = pitching ? "pitcher" : "batter";
+  const percentiles = sources[`${role}Percentiles`]?.players?.[id] ?? {};
+  const valueSources = [`${role}Expected`, `${role}Contact`, ...(pitching ? [] : ["speed"])];
+  panel.hidden = false;
+  document.querySelector("#statcastSeason").textContent = `${season} Statcast`;
+  document.querySelector("#savantLink").href = `https://baseballsavant.mlb.com/savant-player/${encodeURIComponent(id)}`;
+  const metrics = pitching
+    ? [["xwoba", "xwOBA", 3], ["xba", "xBA", 3], ["xslg", "xSLG", 3], ["xera", "xERA", 2], ["strikeout", "K%", 1], ["walk", "BB%", 1], ["whiff", "Whiff%", 1], ["chase", "Chase%", 1], ["hardHit", "Hard-hit%", 1], ["barrel", "Barrel%", 1]]
+    : [["xwoba", "xwOBA", 3], ["xba", "xBA", 3], ["xslg", "xSLG", 3], ["exitVelocity", "Avg. exit velocity", 1], ["hardHit", "Hard-hit%", 1], ["barrel", "Barrel%", 1], ["batSpeed", "Bat speed", 1], ["strikeout", "K%", 1], ["walk", "BB%", 1], ["chase", "Chase%", 1], ["whiff", "Whiff%", 1], ["sprintSpeed", "Sprint speed", 1], ["oaa", "Outs above average", 0], ["armStrength", "Arm strength", 1]];
+  const runs = pitching ? [["pitching", "Pitching run value"]]
+    : [["batting", "Batting run value"], ["fielding", "Fielding run value"], ["baserunning", "Baserunning run value"]];
+  const used = new Set();
+  let available = false;
+  document.querySelector("#statcastRunValues").innerHTML = runs.map(([key, label]) => {
+    const value = finiteValue(sources[key]?.players?.[id]?.[`${key}RunValue`]);
+    if (value != null) { used.add(key); available = true; }
+    const date = sources[key]?.updatedAt;
+    const stamp = value != null && date ? `<small>Updated ${new Date(date).toLocaleDateString()}</small>` : "";
+    return `<div><dt>${label}</dt><dd>${value == null ? "-" : `${value > 0 ? "+" : ""}${value.toFixed(1)}`}</dd>${stamp}</div>`;
+  }).join("");
+  document.querySelector("#statcastRows").innerHTML = metrics.map(([key, label, digits]) => {
+    const valueSource = valueSources.find((name) => finiteValue(sources[name]?.players?.[id]?.[key]) != null);
+    const value = finiteValue(sources[valueSource]?.players?.[id]?.[key]);
+    const percentile = finiteValue(percentiles[key]);
+    if (value != null) used.add(valueSource);
+    if (percentile != null) used.add(`${role}Percentiles`);
+    available ||= value != null || percentile != null;
+    const bar = percentile == null ? "-" : `<div class="percentile-cell"><meter min="0" max="100" value="${percentile}" aria-label="${label} percentile" class="percentile-meter ${percentile >= 70 ? "high" : percentile <= 30 ? "low" : "middle"}">${percentile}</meter><span>${Math.round(percentile)}</span></div>`;
+    return `<tr><th scope="row">${label}</th><td>${value == null ? "-" : value.toFixed(digits)}</td><td>${bar}</td></tr>`;
+  }).join("");
+  const timestamps = [...used].map((key) => Date.parse(sources[key]?.updatedAt)).filter(Number.isFinite);
+  const stale = timestamps.length && Date.now() - Math.min(...timestamps) > 48 * 60 * 60 * 1000;
+  document.querySelector("#statcastStatus").textContent = !available
+    ? "No saved Statcast data for this player and season."
+    : `${stale ? "Showing last available data. " : ""}${timestamps.length ? `Updated ${new Date(Math.min(...timestamps)).toLocaleDateString()}.` : ""}`;
 }
 
 function renderHeadshot(player) {
@@ -494,6 +539,7 @@ if (player) {
     loadPitcherById().then((found) => {
       if (found) return;
       els.name.textContent = "Player not found";
+      document.querySelector("#statcastPanel").hidden = true;
       els.bioPanel.hidden = true;
       els.seasonPanel.hidden = true;
       els.careerPanel.hidden = true;
@@ -501,3 +547,4 @@ if (player) {
     });
   }
 }
+
