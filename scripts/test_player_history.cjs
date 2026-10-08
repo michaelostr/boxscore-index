@@ -40,6 +40,27 @@ assert.equal(vm.runInContext('historyWar({ id: 1 }, { season: "2026", isStint: t
 vm.runInContext('renderHistory(person, { id: 1 })', context);
 assert.match(elements.get('#battingHistoryRows').innerHTML, /&lt;Team&gt;/);
 assert.match(elements.get('#battingHistoryRows').innerHTML, /2 teams/);
+assert.match(elements.get('#battingHistoryRows').innerHTML, /aria-expanded="false"/);
+assert.equal((elements.get('#battingHistoryRows').innerHTML.match(/class="history-stint"[^>]* hidden/g) ?? []).length, 2);
+const toggleStints = () => elements.get('#battingHistoryRows').onclick({ target: { closest: () => ({ dataset: { historySeason: '2025' } }) } });
+toggleStints();
+assert.match(elements.get('#battingHistoryRows').innerHTML, /aria-expanded="true"/);
+assert.doesNotMatch(elements.get('#battingHistoryRows').innerHTML, /class="history-stint"[^>]* hidden/);
+vm.runInContext('renderHistory(person, { id: 1 })', context);
+assert.match(elements.get('#battingHistoryRows').innerHTML, /aria-expanded="true"/);
+toggleStints();
+assert.equal((elements.get('#battingHistoryRows').innerHTML.match(/class="history-stint"[^>]* hidden/g) ?? []).length, 2);
+context.dualPerson = { stats: [...context.person.stats, { type: { displayName: 'yearByYear' }, group: { displayName: 'pitching' }, splits: [
+  split('2025', undefined, { wins: 3 }, { numTeams: 2 }),
+  split('2025', { id: 2 }, { wins: 1 }), split('2025', { id: 3 }, { wins: 2 })
+] }] };
+vm.runInContext('renderHistory(dualPerson, { id: 1 })', context);
+toggleStints();
+assert.match(elements.get('#battingHistoryRows').innerHTML, /aria-expanded="true"/);
+assert.match(elements.get('#pitchingHistoryRows').innerHTML, /aria-expanded="false"/);
+elements.get('#pitchingHistoryRows').onclick({ target: { closest: () => ({ dataset: { historySeason: '2025' } }) } });
+assert.match(elements.get('#pitchingHistoryRows').innerHTML, /aria-expanded="true"/);
+vm.runInContext('expandedHistorySeasons.clear(); renderHistory(person, { id: 1 })', context);
 assert.equal(elements.get('#pitchingHistory').hidden, true);
 assert.match(elements.get('#battingHistoryTotals').innerHTML, /Career/);
 assert.match(elements.get('#battingHistoryTotals').innerHTML, /<td>33<\/td>/);
@@ -65,6 +86,9 @@ const html = fs.readFileSync(path.join(root, 'player.html'), 'utf8');
 assert.doesNotMatch(html, /class="eyebrow"|Baseball stats, pared down/);
 assert.match(html, /<h2 id="seasonStatsLabel">Season Stats<\/h2>/);
 assert.match(html, /<h2 id="statcastSeason">Run Values<\/h2>/);
+const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
+assert.match(css, /\.stat-leader\{[^}]*color:inherit[^}]*text-decoration-line:underline/);
+assert.match(css, /\.leader-key i\{[^}]*border-bottom:2px solid var\(--leader-color\)/);
 vm.runInContext('renderBio({ currentTeam: { id: 121, name: "New York Mets" } }, { teamAbbr: "HOU" })', context);
 assert.match(elements.get('#bioGrid').innerHTML, /Team<\/dt><dd>New York Mets/);
 assert.doesNotMatch(elements.get('#bioGrid').innerHTML, /HOU/);
