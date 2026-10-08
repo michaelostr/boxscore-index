@@ -112,16 +112,20 @@ tbody tr:last-child td{border-bottom:0}
 .history-table tbody th{font-size:12px}
 .history-table .history-stint{color:var(--muted)}
 .history-table .history-stint th:first-child{font-weight:400;padding-left:20px}
-.history-table .history-total{font-weight:650;background:#edf5f1}
-.history-table .history-total th:first-child{background:#edf5f1}
+.history-table tr[hidden]{display:none}
+.history-expand{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;cursor:pointer}
+.history-expand span{display:inline-block;width:12px;text-align:center;font-size:10px;transition:transform .15s}
+.history-expand[aria-expanded="true"] span{transform:rotate(90deg)}
+.history-expand:hover{color:var(--muted)}
+.history-expand:focus-visible{outline:2px solid #1769b1;outline-offset:3px}
 .history-table tfoot th,.history-table tfoot td{background:var(--soft);border-top:2px solid #b9c9d1;border-bottom:0;font-weight:700}
 .history-table tfoot th:first-child{background:var(--soft)}
-.stat-leader{font-weight:800;white-space:nowrap}
-.leader-al{color:#b52f40}.leader-nl{color:#1769b1}.leader-mlb{color:#926700}
+.stat-leader{font-weight:inherit;color:inherit;white-space:nowrap;text-decoration-line:underline;text-decoration-color:var(--leader-color);text-decoration-thickness:2px;text-underline-offset:3px}
+.leader-al{--leader-color:#b52f40}.leader-nl{--leader-color:#1769b1}.leader-mlb{--leader-color:#926700}
 .leader-key{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:10px 22px;border-top:1px solid var(--line);padding-top:14px;font-size:12px}
 .leader-key strong{color:var(--muted);font-weight:600}
-.leader-key span{display:inline-flex;align-items:center;gap:7px;font-weight:650}
-.leader-key i{width:9px;height:9px;background:currentColor;flex-shrink:0}
+.leader-key span{display:inline-flex;align-items:center;gap:7px;font-weight:400}
+.leader-key i{width:16px;height:0;border-bottom:2px solid var(--leader-color);flex-shrink:0}
 .statcast-section .section-head a{font-size:11px}
 .statcast-section>.result-count{margin:-4px 0 10px}
 .statcast-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:white}
@@ -169,3 +173,4 @@ tbody tr:last-child td{border-bottom:0}
  .statcast-table th,.statcast-table td{padding:9px 7px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+
