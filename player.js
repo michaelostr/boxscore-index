@@ -7,9 +7,30 @@ const advancedSnapshot = window.ADVANCED_BATTING_DATA ?? { players: [] };
 let players = snapshot.players ?? [];
 const teams = snapshot.teams ?? [];
 const teamById = Object.fromEntries(teams.map((team) => [team.id, team]));
+const teamByName = new Map(teams.map(team => [team.name, team]));
+const historyTeamsBySeason = new Map();
+const historyTeamRequests = new Map();
 
-function teamAbbreviation(team, fallback = "-") {
-  return team?.abbreviation ?? team?.abbr ?? teamById[String(team?.id)]?.abbr ?? fallback;
+function teamAbbreviation(team, fallback = "-", season) {
+  const official = historyTeamsBySeason.get(String(season))?.get(String(team?.id));
+  const saved = teamById[String(team?.id)] ?? teamByName.get(team?.name);
+  return official?.abbreviation ?? team?.abbreviation ?? team?.abbr ?? saved?.abbr ?? fallback;
+}
+
+async function loadHistoryTeams(person) {
+  const seasons = [...new Set(["hitting", "pitching"].flatMap(group => historyRows(person, group).map(row => row.season)))];
+  await Promise.allSettled(seasons.map(season => {
+    const key = String(season);
+    if (historyTeamRequests.has(key)) return historyTeamRequests.get(key);
+    const request = (async () => {
+      const response = await fetch(`${API_BASE}/teams?sportId=1&season=${encodeURIComponent(key)}`);
+      if (!response.ok) throw new Error("MLB team abbreviations unavailable");
+      const data = await response.json();
+      historyTeamsBySeason.set(key, new Map((data.teams ?? []).map(team => [String(team.id), team])));
+    })();
+    historyTeamRequests.set(key, request);
+    return request.catch(error => { historyTeamRequests.delete(key); throw error; });
+  }));
 }
 
 const els = {
@@ -428,7 +449,7 @@ function renderHistory(person, player) {
     document.querySelector(`#${key}HistoryHead`).innerHTML = `<tr>${labels.map((label) => `<th scope="col">${label}</th>`).join("")}</tr>`;
     document.querySelector(`#${key}HistoryRows`).innerHTML = rows.map((row) => {
       const team = row.isTotal ? `${row.numTeams ?? "Multiple"} teams` :
-        teamAbbreviation(row.team);
+        teamAbbreviation(row.team, "-", row.season);
       const cells = [escapeHistory(row.stat.age), escapeHistory(team),
         ...columns.map(([, field]) => leaderValue(row.stat[field], player, field, group, row.season, !row.isStint)),
         ...["fwar", "bwar"].map(field => leaderValue(historyWar(player, row, field, group), player, field, group, row.season, !row.isStint))];
@@ -480,6 +501,7 @@ async function loadCareer(player) {
     if (!person) throw new Error("player not found");
     renderBio(person, player);
     renderHistory(person, player);
+    loadHistoryTeams(person).then(() => renderHistory(person, player)).catch(() => {});
     const jobs = ["hitting", "pitching"].flatMap(group =>
       [...new Set(historyRows(person, group).map(row => row.season))].map(season => ({ group, season })));
     window.PLAYER_LEADERS?.load(jobs, () => {
