@@ -42,7 +42,7 @@ jobs:
           season="${REQUESTED_SEASON:-$(date -u +%Y)}"
           python scripts/update_statcast.py --season "$season"
       - name: Save snapshot
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -56,4 +56,3 @@ jobs:
         with:
           name: statcast-access-test
           path: data/statcast.js
-
