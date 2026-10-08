@@ -13,6 +13,8 @@ class StatcastTests(unittest.TestCase):
 
     def test_signed_run_values(self):
         self.assertEqual(normalize([{"player_id": "123", "runner_runs_tot": "-4.2"}], "baserunning"), {"123": {"baserunningRunValue": -4.2}})
+        self.assertEqual(normalize([{"player_id": "123", "runs_all": "14"}], "batting"), {"123": {"battingRunValue": 14}})
+        self.assertEqual(normalize([{"player_id": "123", "ev95percent": "45.2"}], "contact"), {"123": {"hardHit": 45.2}})
 
     def test_reject_ambiguous_columns_and_splits(self):
         with self.assertRaises(ValueError):
@@ -53,4 +55,3 @@ class StatcastTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
