@@ -246,7 +246,7 @@ function renderSearchResults(matches) {
 
 function renderSeason(player) {
   const wrc = finiteValue(advancedStatsForPlayer(player)?.wrc ?? player.wrc);
-  els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season`;
+  els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season stats`;
   els.season.innerHTML = [
     statBlock("AVG", fmtRate(player.avg)),
     statBlock("OPS", fmtRate(player.ops)),
@@ -259,7 +259,7 @@ function renderSeason(player) {
 }
 
 function renderPitchingSeason(player) {
-  els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season`;
+  els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season stats`;
   els.season.innerHTML = [
     statBlock("IP", player.ip),
     statBlock("ERA", fmtPitchingRate(player.era)),
@@ -296,10 +296,10 @@ function renderStatcast(player) {
   const role = pitching ? "pitcher" : "batter";
   const official = sources[`${role}Percentiles`]?.players?.[id] ?? {};
   panel.hidden = false;
-  document.querySelector("#statcastSeason").textContent = `${season} Statcast`;
+  document.querySelector("#statcastSeason").textContent = `${season} run values`;
   document.querySelector("#savantLink").href = `https://baseballsavant.mlb.com/savant-player/${encodeURIComponent(id)}`;
-  const metrics = pitching ? [["pitching", "Pitching run value"]]
-    : [["batting", "Batting run value"], ["fielding", "Fielding run value"], ["baserunning", "Baserunning run value"]];
+  const metrics = pitching ? [["pitching", "Pitching"]]
+    : [["batting", "Batting"], ["fielding", "Fielding"], ["baserunning", "Baserunning"]];
   const timestamps = [];
   let available = false;
   document.querySelector("#statcastRows").innerHTML = metrics.map(([key, label]) => {
@@ -323,7 +323,7 @@ function renderStatcast(player) {
   const stale = validDates.length && Date.now() - Math.min(...validDates) > 48 * 60 * 60 * 1000;
   document.querySelector("#statcastStatus").textContent = !available
     ? "No saved run values for this player and season."
-    : `Leaderboard percentiles. ${stale ? "Last available data. " : ""}${validDates.length ? `Updated ${new Date(Math.min(...validDates)).toLocaleDateString()}.` : ""}`;
+    : `${stale ? "Last available data. " : ""}${validDates.length ? `Updated ${new Date(Math.min(...validDates)).toLocaleDateString()}.` : ""}`;
 }
 
 function renderHeadshot(player) {
