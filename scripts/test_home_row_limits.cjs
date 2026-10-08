@@ -27,6 +27,8 @@ const rowCount = id => (elements.get(id).innerHTML.match(/<tr>/g) ?? []).length;
 assert.equal(rowCount('#playerRows'), 10);
 assert.equal(rowCount('#pitcherRows'), 10);
 assert.match(elements.get('#playerRows').innerHTML, /Hitter 179/);
+assert.doesNotMatch(elements.get('#playerRows').innerHTML, /--team-color/);
+assert.doesNotMatch(elements.get('#pitcherRows').innerHTML, /--team-color/);
 assert.equal(elements.get('#fewerBatters').hidden, true);
 assert.equal(elements.get('#fewerPitchers').hidden, true);
 assert.equal(elements.get('#moreBatters').hidden, false);
@@ -87,5 +89,9 @@ for (const id of ['fewerBatters', 'fewerPitchers']) {
   assert.match(html, new RegExp(`id="${id}"[^>]*hidden>Show less`));
 }
 assert.doesNotMatch(html, /id="(?:batting|pitching)RowLimit"/);
+assert.doesNotMatch(html, /<p class="eyebrow">(?:Qualified hitters|Qualified pitchers|Clubs|Reference)<\/p>/);
+assert.match(html, /<h1 id="seasonLabel">MLB statistics<\/h1>/);
+const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
+assert.match(css, /\.team-chip\{[^}]*color:var\(--muted\)/);
 console.log('Home table checks passed: progressive expansion, collapse, button visibility, independence, sorting, and qualification.');
 
