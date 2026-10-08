@@ -103,7 +103,7 @@ def feeds(season):
         "speed": ("sprint_speed", {"year": season, "position": "", "team": "", "min": 1}, "speed"),
         "batting": ("swing-take", {"group": "Batter", "type": "All", "year": season}, "batting"),
         "pitching": ("swing-take", {"group": "Pitcher", "type": "All", "year": season}, "pitching"),
-        "fielding": ("fielding-run-value", {"seasonStart": season, "seasonEnd": season, "type": "player"}, "fielding"),
+        "fielding": ("fielding-run-value", {"seasonStart": season, "seasonEnd": season}, "fielding"),
         "baserunning": ("baserunning-run-value", {"season_start": season, "season_end": season, "type": "Run", "game_type": "Regular", "n": 1}, "baserunning"),
     }
 
