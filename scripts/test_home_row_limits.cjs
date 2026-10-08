@@ -6,13 +6,13 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const elements = new Map();
 const context = vm.createContext({ window: {}, document: { querySelector(selector) {
-  if (!elements.has(selector)) elements.set(selector, { value: '10', handlers: {},
+  if (!elements.has(selector)) elements.set(selector, { handlers: {},
     addEventListener(event, callback) { this.handlers[event] = callback; } });
   return elements.get(selector);
 } } });
 const source = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 vm.runInContext(source.slice(0, source.indexOf('els.searchForm.addEventListener')), context);
-vm.runInContext(source.slice(source.indexOf('els.battingRowLimit.addEventListener'),
+vm.runInContext(source.slice(source.indexOf('els.moreBatters.addEventListener'),
   source.indexOf('document.querySelectorAll("th button")')), context);
 context.fixture = [
   ...Array.from({ length: 180 }, (_, i) => ({ id: `h${i}`, name: `Hitter ${i}`, hasBatting: true,
@@ -27,30 +27,48 @@ const rowCount = id => (elements.get(id).innerHTML.match(/<tr>/g) ?? []).length;
 assert.equal(rowCount('#playerRows'), 10);
 assert.equal(rowCount('#pitcherRows'), 10);
 assert.match(elements.get('#playerRows').innerHTML, /Hitter 179/);
-for (const [option, expected] of [['50', 50], ['100', 100], ['200', 180], ['500', 180], ['all', 180], ['10', 10]]) {
-  const control = elements.get('#battingRowLimit');
-  control.value = option;
-  control.handlers.change();
+assert.equal(elements.get('#fewerBatters').hidden, true);
+assert.equal(elements.get('#fewerPitchers').hidden, true);
+assert.equal(elements.get('#moreBatters').hidden, false);
+for (const expected of [50, 100, 180]) {
+  elements.get('#moreBatters').handlers.click();
   assert.equal(rowCount('#playerRows'), expected);
   assert.equal(rowCount('#pitcherRows'), 10);
+  assert.equal(elements.get('#fewerBatters').hidden, false);
 }
-elements.get('#pitchingRowLimit').value = '100';
-elements.get('#pitchingRowLimit').handlers.change();
+assert.equal(elements.get('#moreBatters').hidden, true);
+elements.get('#fewerBatters').handlers.click();
+assert.equal(rowCount('#playerRows'), 10);
+assert.equal(elements.get('#fewerBatters').hidden, true);
+assert.equal(elements.get('#moreBatters').hidden, false);
+elements.get('#morePitchers').handlers.click();
+assert.equal(rowCount('#pitcherRows'), 50);
+assert.equal(elements.get('#fewerPitchers').hidden, false);
+elements.get('#morePitchers').handlers.click();
 assert.equal(rowCount('#pitcherRows'), 100);
 assert.equal(rowCount('#playerRows'), 10);
-elements.get('#pitchingRowLimit').value = 'all';
-elements.get('#pitchingRowLimit').handlers.change();
+elements.get('#morePitchers').handlers.click();
 assert.equal(rowCount('#pitcherRows'), 120);
+assert.equal(elements.get('#morePitchers').hidden, true);
+elements.get('#fewerPitchers').handlers.click();
+assert.equal(rowCount('#pitcherRows'), 10);
+assert.equal(elements.get('#fewerPitchers').hidden, true);
 assert.doesNotMatch(elements.get('#playerRows').innerHTML, /Unqualified/);
 assert.doesNotMatch(elements.get('#pitcherRows').innerHTML, /Unqualified/);
 assert.equal(vm.runInContext('players.length', context), 302);
-assert.equal(vm.runInContext('tableRowLimit("invalid")', context), 10);
+assert.equal(vm.runInContext('nextRowLimit(200)', context), 500);
+assert.equal(vm.runInContext('nextRowLimit(500)', context), Infinity);
+vm.runInContext('players = fixture.slice(0, 6); renderTable();', context);
+assert.equal(rowCount('#playerRows'), 6);
+assert.equal(elements.get('#moreBatters').hidden, true);
+assert.equal(elements.get('#fewerBatters').hidden, true);
 vm.runInContext('players = []; renderTable(); renderPitchingTable();', context);
 assert.equal(rowCount('#playerRows'), 0);
 assert.equal(rowCount('#pitcherRows'), 0);
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-for (const id of ['battingRowLimit', 'pitchingRowLimit']) {
-  assert.match(html, new RegExp(`id="${id}"[^>]*>\\s*<option value="10">Top 10`));
+for (const id of ['fewerBatters', 'fewerPitchers']) {
+  assert.match(html, new RegExp(`id="${id}"[^>]*hidden>Show less`));
 }
-console.log('Home table checks passed: defaults, dropdown changes, independent limits, sorting, qualification, and empty lists.');
+assert.doesNotMatch(html, /id="(?:batting|pitching)RowLimit"/);
+console.log('Home table checks passed: progressive expansion, collapse, button visibility, independence, sorting, and qualification.');
 
