@@ -46,10 +46,12 @@ const els = {
   searchDropdown: document.querySelector("#playerSearchDropdown"),
   rows: document.querySelector("#playerRows"),
   resultCount: document.querySelector("#resultCount"),
-  battingRowLimit: document.querySelector("#battingRowLimit"),
+  moreBatters: document.querySelector("#moreBatters"),
+  fewerBatters: document.querySelector("#fewerBatters"),
   pitcherRows: document.querySelector("#pitcherRows"),
   pitcherResultCount: document.querySelector("#pitcherResultCount"),
-  pitchingRowLimit: document.querySelector("#pitchingRowLimit"),
+  morePitchers: document.querySelector("#morePitchers"),
+  fewerPitchers: document.querySelector("#fewerPitchers"),
   teamGrid: document.querySelector("#teamGrid"),
   gamesGrid: document.querySelector("#gamesGrid"),
   gamesStatus: document.querySelector("#gamesStatus"),
@@ -428,6 +430,7 @@ function renderTable() {
   const list = sortPlayers(filteredPlayers());
   const visible = list.slice(0, state.battingRowLimit);
   els.resultCount.textContent = `Showing ${visible.length} of ${list.length} qualified hitter${list.length === 1 ? "" : "s"}`;
+  updateRowControls(els.moreBatters, els.fewerBatters, visible.length, list.length);
   els.rows.innerHTML = visible
     .map((player) => {
       const team = teamById[player.team] ?? {};
@@ -451,10 +454,13 @@ function renderTable() {
     .join("");
 }
 
-function tableRowLimit(value) {
-  if (value === "all") return Infinity;
-  const limit = Number(value);
-  return [10, 50, 100, 200, 500].includes(limit) ? limit : DEFAULT_TABLE_ROWS;
+function nextRowLimit(current) {
+  return [50, 100, 200, 500, Infinity].find(limit => limit > current) ?? Infinity;
+}
+
+function updateRowControls(more, less, visible, total) {
+  more.hidden = visible >= total;
+  less.hidden = visible <= DEFAULT_TABLE_ROWS;
 }
 
 function allPitchers() {
@@ -486,6 +492,7 @@ function renderPitchingTable() {
   const list = qualifiedPitchers().sort((a, b) => Number(a.era ?? 99) - Number(b.era ?? 99));
   const visible = list.slice(0, state.pitchingRowLimit);
   els.pitcherResultCount.textContent = `Showing ${visible.length} of ${list.length} qualified pitcher${list.length === 1 ? "" : "s"}`;
+  updateRowControls(els.morePitchers, els.fewerPitchers, visible.length, list.length);
   els.pitcherRows.innerHTML = visible
     .map((player) => {
       const team = teamById[player.team] ?? {};
@@ -711,13 +718,23 @@ document.addEventListener("click", (event) => {
   if (!els.searchForm.contains(event.target)) els.searchDropdown.hidden = true;
 });
 
-els.battingRowLimit.addEventListener("change", () => {
-  state.battingRowLimit = tableRowLimit(els.battingRowLimit.value);
+els.moreBatters.addEventListener("click", () => {
+  state.battingRowLimit = nextRowLimit(state.battingRowLimit);
   renderTable();
 });
 
-els.pitchingRowLimit.addEventListener("change", () => {
-  state.pitchingRowLimit = tableRowLimit(els.pitchingRowLimit.value);
+els.fewerBatters.addEventListener("click", () => {
+  state.battingRowLimit = DEFAULT_TABLE_ROWS;
+  renderTable();
+});
+
+els.morePitchers.addEventListener("click", () => {
+  state.pitchingRowLimit = nextRowLimit(state.pitchingRowLimit);
+  renderPitchingTable();
+});
+
+els.fewerPitchers.addEventListener("click", () => {
+  state.pitchingRowLimit = DEFAULT_TABLE_ROWS;
   renderPitchingTable();
 });
 

@@ -82,9 +82,7 @@ tbody tr:last-child td{border-bottom:0}
 .player-button{padding:0;border:0;background:none;color:var(--green-dark);text-align:left;font-weight:600}
 .player-button:hover{text-decoration:underline}
 .team-chip{display:inline-block;color:var(--team-color);font-size:11px;font-weight:700}
-.table-footer{display:flex;justify-content:flex-start;margin-top:10px}
-.leader-row-control{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
-.leader-row-control select{width:auto;min-width:135px;height:32px;padding:0 10px;color:var(--ink)}
+.table-footer{display:flex;justify-content:flex-start;gap:8px;margin-top:10px}
 .secondary-button{min-height:32px;padding:4px 12px;background:white;color:var(--green-dark);border:1px solid #c8d4da;border-radius:4px;font-size:12px;font-weight:600}
 .secondary-button:hover{background:#eaf3ef}
 .glossary{grid-column:1/-1;padding-top:18px;border-top:1px solid var(--line)}
