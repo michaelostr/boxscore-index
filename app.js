@@ -433,11 +433,10 @@ function renderTable() {
   updateRowControls(els.moreBatters, els.fewerBatters, visible.length, list.length);
   els.rows.innerHTML = visible
     .map((player) => {
-      const team = teamById[player.team] ?? {};
       return `
         <tr>
           <td><button class="player-button" type="button" data-player="${player.id}">${player.name}</button></td>
-          <td><span class="team-chip" style="--team-color: ${team.color ?? "#315f8c"}">${player.teamAbbr}</span></td>
+          <td><span class="team-chip">${player.teamAbbr}</span></td>
           <td>${player.pos}</td>
           <td>${player.g}</td>
           <td>${fmtRate(player.avg)}</td>
@@ -500,11 +499,10 @@ function renderPitchingTable() {
   updateRowControls(els.morePitchers, els.fewerPitchers, visible.length, list.length);
   els.pitcherRows.innerHTML = visible
     .map((player) => {
-      const team = teamById[player.team] ?? {};
       return `
         <tr>
           <td><button class="player-button" type="button" data-pitcher="${player.id}">${player.name}</button></td>
-          <td><span class="team-chip" style="--team-color: ${team.color ?? "#315f8c"}">${player.teamAbbr}</span></td>
+          <td><span class="team-chip">${player.teamAbbr}</span></td>
           <td>${player.p_g}</td>
           <td>${player.gs}</td>
           <td>${player.ip}</td>
@@ -573,7 +571,7 @@ function renderTeams() {
 }
 
 function renderSummary() {
-  els.seasonLabel.textContent = `${state.season} MLB regular season / qualified hitters and pitchers`;
+  els.seasonLabel.textContent = `${state.season} MLB statistics`;
 }
 
 function renderPlayerSuggestions() {
