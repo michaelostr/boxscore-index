@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const elements = new Map();
 const context = vm.createContext({ URLSearchParams, window: {
-  location: { search: '?id=1&season=2026' }, MLB_STATS_DATA: { season: 2026, players: [], teams: [{ id: '121', abbr: 'NYM', name: 'New York Mets' }] },
+  location: { search: '?id=1&season=2026' }, MLB_STATS_DATA: { season: 2026, players: [], teams: [{ id: 'NYM', abbr: 'NYM', name: 'New York Mets' }, { id: 'CHC', abbr: 'CHC', name: 'Chicago Cubs' }] },
   WAR_DATA: { seasons: { '2026': { sources: { fwarBatting: { players: { '1': 0 } },
     bwarPitching: { players: { '1': -0.7 } } } } } }
 }, document: { querySelector(selector) {
@@ -68,9 +68,9 @@ assert.match(html, /<h2 id="statcastSeason">Run Values<\/h2>/);
 vm.runInContext('renderBio({ currentTeam: { id: 121, name: "New York Mets" } }, { teamAbbr: "HOU" })', context);
 assert.match(elements.get('#bioGrid').innerHTML, /Team<\/dt><dd>New York Mets/);
 assert.doesNotMatch(elements.get('#bioGrid').innerHTML, /HOU/);
-vm.runInContext('renderLocalPlayer({ id: 1, team: "121", teamAbbr: "NYM", name: "Test Player" })', context);
+vm.runInContext('renderLocalPlayer({ id: 1, team: "NYM", teamAbbr: "NYM", name: "Test Player" })', context);
 assert.match(elements.get('#bioGrid').innerHTML, /Team<\/dt><dd>New York Mets/);
-vm.runInContext('renderLocalPitcher({ id: 1, team: "121", teamAbbr: "NYM", name: "Test Pitcher", hasBatting: false })', context);
+vm.runInContext('renderLocalPitcher({ id: 1, team: "NYM", teamAbbr: "NYM", name: "Test Pitcher", hasBatting: false })', context);
 assert.match(elements.get('#bioGrid').innerHTML, /Team<\/dt><dd>New York Mets/);
 context.abbreviationPerson = { stats: [{ type: { displayName: 'yearByYear' }, group: { displayName: 'hitting' },
   splits: [split('2026', { id: 121, name: 'New York Mets' }, { homeRuns: 1 })] }] };
@@ -78,13 +78,29 @@ vm.runInContext('renderHistory(abbreviationPerson, { id: 1 })', context);
 assert.match(elements.get('#battingHistoryRows').innerHTML, /<td>NYM<\/td>/);
 assert.doesNotMatch(elements.get('#battingHistoryRows').innerHTML, /New York Mets/);
 assert.equal(vm.runInContext('teamAbbreviation({ name: "Unknown Team" })', context), '-');
+assert.equal(vm.runInContext('teamAbbreviation({ id: 112, name: "Chicago Cubs" })', context), 'CHC');
 
 async function main() {
+  const requested = [];
+  context.fetch = async url => {
+    requested.push(url);
+    const season = new URL(url).searchParams.get('season');
+    return { ok: true, json: async () => ({ teams: [{ id: 999, name: 'Historical Club', abbreviation: season === '2025' ? 'OLD' : 'NEW' }] }) };
+  };
+  await vm.runInContext('loadHistoryTeams(person)', context);
+  assert.equal(vm.runInContext('teamAbbreviation({ id: 999 }, "-", "2025")', context), 'OLD');
+  assert.equal(vm.runInContext('teamAbbreviation({ id: 999 }, "-", "2026")', context), 'NEW');
+  assert.equal(requested.length, 2);
+  await vm.runInContext('loadHistoryTeams(person)', context);
+  assert.equal(requested.length, 2);
   if (process.argv.includes('--live')) {
+    context.fetch = fetch;
+    vm.runInContext('historyTeamsBySeason.clear(); historyTeamRequests.clear();', context);
     for (const [id, group] of [[665742, 'hitting'], [656427, 'pitching'], [660271, 'pitching']]) {
       const response = await fetch(`https://statsapi.mlb.com/api/v1/people/${id}?hydrate=currentTeam,stats(group=[hitting,pitching],type=[career,yearByYear],sportIds=[1])`);
       assert.equal(response.ok, true);
       context.person = (await response.json()).people[0];
+      await vm.runInContext('loadHistoryTeams(person)', context);
       const liveRows = vm.runInContext(`historyRows(person, '${group}')`, context);
       assert.ok(liveRows.length > 1);
       assert.ok(vm.runInContext(`careerStatsFromPerson(person, '${group}')`, context));
@@ -102,6 +118,19 @@ async function main() {
       }
       console.log(`Verified live history for ${context.person.fullName}: ${liveRows.length} ${group} rows.`);
     }
+    const response = await fetch('https://statsapi.mlb.com/api/v1/people/691718?hydrate=stats(group=[hitting],type=[yearByYear],sportIds=[1])');
+    assert.equal(response.ok, true);
+    context.person = (await response.json()).people[0];
+    await vm.runInContext('loadHistoryTeams(person)', context);
+    vm.runInContext('renderHistory(person, { mlbId: 691718 })', context);
+    const cubsRows = vm.runInContext('historyRows(person, "hitting").filter(row => row.team?.id === 112)', context);
+    assert.ok(cubsRows.length >= 3);
+    for (const row of cubsRows) {
+      context.cubsRow = row;
+      assert.equal(vm.runInContext('teamAbbreviation(cubsRow.team, "-", cubsRow.season)', context), 'CHC');
+    }
+    assert.match(elements.get('#battingHistoryRows').innerHTML, /<td>CHC<\/td>/);
+    console.log('Verified Chicago Cubs abbreviations for Pete Crow-Armstrong season history.');
   }
   console.log('Player history checks passed.');
 }
