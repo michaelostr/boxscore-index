@@ -69,7 +69,12 @@ function savedWar(player, measure, role) {
 
 function warBlock(player, measure, role) {
   const value = savedWar(player, measure, role);
-  return statBlock(measure === "fwar" ? "fWAR" : "bWAR", value == null ? "-" : value.toFixed(1));
+  const season = String(params.get("season") || snapshot.season || new Date().getFullYear());
+  const source = window.WAR_DATA?.seasons?.[season]?.sources?.[measure + role];
+  const date = new Date(source?.updatedAt);
+  const provider = measure === "fwar" ? "FanGraphs" : "Baseball-Reference";
+  const updated = Number.isFinite(date.getTime()) ? `; updated ${date.toISOString()}` : "";
+  return `<div title="${provider} ${role.toLowerCase()} WAR${updated}"><dt>${measure === "fwar" ? "fWAR" : "bWAR"}</dt><dd>${value == null ? "-" : value.toFixed(1)}</dd></div>`;
 }
 
 function fmtFwar(player) {
@@ -312,7 +317,7 @@ function renderSeason(player) {
     statBlock("SLG", fmtRate(player.slg)),
     statBlock("OPS", fmtRate(player.ops)),
     statBlock(wrcLabel, wrcValue),
-    statBlock("fWAR", fmtFwar(player)),
+    warBlock(player, "fwar", "Batting"),
     warBlock(player, "bwar", "Batting"),
     statBlock("HR", player.hr),
     statBlock("RBI", player.rbi),
