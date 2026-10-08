@@ -12,7 +12,6 @@
         <span class="brand-mark" aria-hidden="true">BI</span>
         <span>
           <strong>Boxscore Index</strong>
-          <small>Baseball stats, pared down</small>
         </span>
       </a>
       <nav aria-label="Primary">
@@ -34,33 +33,27 @@
 
       <section class="panel" id="searchResultsPanel" hidden>
         <div class="section-head">
-          <div>
-            <p class="eyebrow">Search results</p>
-            <h2>Choose a player</h2>
-          </div>
+          <h2>Choose a player</h2>
         </div>
         <div class="search-results" id="searchResults"></div>
       </section>
 
       <section class="panel" id="seasonPanel">
         <div class="section-head">
-          <div>
-            <p class="eyebrow" id="seasonStatsLabel">Current season</p>
-            <h2>Season stats</h2>
-          </div>
+          <h2 id="seasonStatsLabel">Season stats</h2>
         </div>
         <dl class="career-table" id="seasonStats"></dl>
       </section>
 
       <section class="statcast-section" id="statcastPanel" hidden>
         <div class="section-head">
-          <div><p class="eyebrow" id="statcastSeason">Statcast</p><h2>Run values</h2></div>
+          <h2 id="statcastSeason">Run values</h2>
           <a id="savantLink" target="_blank" rel="noreferrer">Baseball Savant</a>
         </div>
         <p class="result-count" id="statcastStatus" role="status"></p>
         <div class="statcast-table-wrap">
           <table class="statcast-table">
-            <thead><tr><th scope="col">Run value</th><th scope="col">Runs</th><th scope="col">Leaderboard percentile</th></tr></thead>
+            <thead><tr><th scope="col">Metric</th><th scope="col">Runs</th><th scope="col">Leaderboard percentile</th></tr></thead>
             <tbody id="statcastRows"></tbody>
           </table>
         </div>
@@ -68,7 +61,7 @@
 
       <section class="panel" id="historyPanel">
         <div class="section-head">
-          <h2>Season-by-season statistics</h2>
+          <h2>Season-by-season</h2>
           <p id="historyStatus" class="result-count" role="status">Loading season history...</p>
         </div>
         <div id="battingHistory" hidden>
