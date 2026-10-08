@@ -348,7 +348,7 @@ function renderLocalPlayer(player) {
   renderPlayerHeader(player);
   els.bio.innerHTML = [
     statBlock("Position", player.pos),
-    statBlock("Team", teamAbbreviation({ id: player.team }, player.teamAbbr)),
+    statBlock("Team", teamById[player.team]?.name ?? player.teamAbbr),
     statBlock("Bats", "-"),
     statBlock("Throws", "-"),
     statBlock("Height", "-"),
@@ -362,7 +362,7 @@ function renderLocalPitcher(player) {
   renderPlayerHeader(player);
   els.bio.innerHTML = [
     statBlock("Position", player.pos ?? "P"),
-    statBlock("Team", player.teamAbbr),
+    statBlock("Team", teamById[player.team]?.name ?? player.teamAbbr),
     statBlock("Bats", "-"),
     statBlock("Throws", "-"),
     statBlock("Height", "-"),
@@ -453,7 +453,7 @@ function careerWar(player, rows, measure, group) {
 }
 
 function renderBio(person, localPlayer) {
-  const team = teamAbbreviation(person.currentTeam ?? { id: localPlayer.team }, localPlayer.teamAbbr ?? "-");
+  const team = person.currentTeam?.name ?? teamById[String(person.currentTeam?.id ?? localPlayer.team)]?.name ?? localPlayer.teamAbbr;
   els.bio.innerHTML = [
     statBlock("Position", person.primaryPosition?.abbreviation ?? localPlayer.pos),
     statBlock("Team", team),

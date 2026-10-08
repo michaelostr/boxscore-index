@@ -66,8 +66,17 @@ assert.doesNotMatch(html, /class="eyebrow"|Baseball stats, pared down/);
 assert.match(html, /<h2 id="seasonStatsLabel">Season Stats<\/h2>/);
 assert.match(html, /<h2 id="statcastSeason">Run Values<\/h2>/);
 vm.runInContext('renderBio({ currentTeam: { id: 121, name: "New York Mets" } }, { teamAbbr: "HOU" })', context);
-assert.match(elements.get('#bioGrid').innerHTML, /Team<\/dt><dd>NYM/);
-assert.doesNotMatch(elements.get('#bioGrid').innerHTML, /New York Mets|HOU/);
+assert.match(elements.get('#bioGrid').innerHTML, /Team<\/dt><dd>New York Mets/);
+assert.doesNotMatch(elements.get('#bioGrid').innerHTML, /HOU/);
+vm.runInContext('renderLocalPlayer({ id: 1, team: "121", teamAbbr: "NYM", name: "Test Player" })', context);
+assert.match(elements.get('#bioGrid').innerHTML, /Team<\/dt><dd>New York Mets/);
+vm.runInContext('renderLocalPitcher({ id: 1, team: "121", teamAbbr: "NYM", name: "Test Pitcher", hasBatting: false })', context);
+assert.match(elements.get('#bioGrid').innerHTML, /Team<\/dt><dd>New York Mets/);
+context.abbreviationPerson = { stats: [{ type: { displayName: 'yearByYear' }, group: { displayName: 'hitting' },
+  splits: [split('2026', { id: 121, name: 'New York Mets' }, { homeRuns: 1 })] }] };
+vm.runInContext('renderHistory(abbreviationPerson, { id: 1 })', context);
+assert.match(elements.get('#battingHistoryRows').innerHTML, /<td>NYM<\/td>/);
+assert.doesNotMatch(elements.get('#battingHistoryRows').innerHTML, /New York Mets/);
 assert.equal(vm.runInContext('teamAbbreviation({ name: "Unknown Team" })', context), '-');
 
 async function main() {
