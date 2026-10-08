@@ -58,7 +58,23 @@ function finiteValue(value) {
 }
 
 function fwarValue(player) {
-  return finiteValue(player?.fwar) ?? finiteValue(player?.war);
+  return savedWar(player, "fwar", "Batting") ?? finiteValue(player?.fwar) ?? finiteValue(player?.war);
+}
+
+function savedWar(player, measure, role) {
+  const season = String(params.get("season") || snapshot.season || new Date().getFullYear());
+  const source = window.WAR_DATA?.seasons?.[season]?.sources?.[measure + role];
+  return finiteValue(source?.players?.[String(player?.mlbId ?? player?.id ?? "")]);
+}
+
+function warBlock(player, measure, role) {
+  const value = savedWar(player, measure, role);
+  const season = String(params.get("season") || snapshot.season || new Date().getFullYear());
+  const source = window.WAR_DATA?.seasons?.[season]?.sources?.[measure + role];
+  const date = new Date(source?.updatedAt);
+  const provider = measure === "fwar" ? "FanGraphs" : "Baseball-Reference";
+  const updated = Number.isFinite(date.getTime()) ? `; updated ${date.toISOString()}` : "";
+  return `<div title="${provider} ${role.toLowerCase()} WAR${updated}"><dt>${measure === "fwar" ? "fWAR" : "bWAR"}</dt><dd>${value == null ? "-" : value.toFixed(1)}</dd></div>`;
 }
 
 function fmtFwar(player) {
@@ -301,7 +317,8 @@ function renderSeason(player) {
     statBlock("SLG", fmtRate(player.slg)),
     statBlock("OPS", fmtRate(player.ops)),
     statBlock(wrcLabel, wrcValue),
-    statBlock("fWAR", fmtFwar(player)),
+    warBlock(player, "fwar", "Batting"),
+    warBlock(player, "bwar", "Batting"),
     statBlock("HR", player.hr),
     statBlock("RBI", player.rbi),
     statBlock("SB", player.sb),
@@ -314,6 +331,8 @@ function renderSeason(player) {
 function renderPitchingSeason(player) {
   els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season`;
   els.season.innerHTML = [
+    warBlock(player, "fwar", "Pitching"),
+    warBlock(player, "bwar", "Pitching"),
     statBlock("G", player.p_g),
     statBlock("GS", player.gs),
     statBlock("IP", player.ip),
@@ -554,3 +573,4 @@ if (player) {
     });
   }
 }
+

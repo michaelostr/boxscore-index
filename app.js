@@ -92,7 +92,9 @@ function finiteValue(value) {
 }
 
 function fwarValue(player) {
-  return finiteValue(player?.fwar) ?? finiteValue(player?.war);
+  const source = window.WAR_DATA?.seasons?.[String(state.season)]?.sources?.fwarBatting;
+  const official = source?.players?.[String(player?.mlbId ?? player?.id ?? "")];
+  return finiteValue(official) ?? finiteValue(player?.fwar) ?? finiteValue(player?.war);
 }
 
 function fmtFwar(player) {
@@ -147,7 +149,7 @@ function mergePybaseballStats(playerList) {
       war: fwar,
       note: fwar == null
         ? player.note
-        : `${player.note} fWAR from pybaseball FanGraphs batting_stats snapshot.`
+        : `${player.note} fWAR from the saved FanGraphs snapshot.`
     };
   });
 }
@@ -813,3 +815,4 @@ loadTodayGames();
 setInterval(() => { if (!document.hidden) loadTodayGames(); }, 30000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) loadTodayGames(); });
 loadMlbData();
+
