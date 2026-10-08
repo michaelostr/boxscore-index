@@ -1,13 +1,13 @@
 window.PLAYER_LEADERS = (() => {
   const categories = {
-    hitting: { ALL: ['runs', 'hits', 'doubles', 'triples', 'homeRuns', 'runsBattedIn', 'stolenBases', 'walks'],
+    hitting: { ALL: ['gamesPlayed', 'runs', 'hits', 'doubles', 'triples', 'homeRuns', 'runsBattedIn', 'stolenBases', 'walks'],
       QUALIFIED: ['battingAverage', 'onBasePercentage', 'sluggingPercentage', 'onBasePlusSlugging'] },
     pitching: { ALL: ['wins', 'saves', 'inningsPitched', 'strikeouts'],
       QUALIFIED: ['earnedRunAverage', 'walksAndHitsPerInningPitched'] }
   };
   const fields = { avg: 'battingAverage', obp: 'onBasePercentage', slg: 'sluggingPercentage', ops: 'onBasePlusSlugging',
     era: 'earnedRunAverage', whip: 'walksAndHitsPerInningPitched', strikeOuts: 'strikeouts', rbi: 'runsBattedIn', baseOnBalls: 'walks' };
-  const names = { runs: 'runs', hits: 'hits', doubles: 'doubles', triples: 'triples', homeRuns: 'home runs',
+  const names = { gamesPlayed: 'games played', runs: 'runs', hits: 'hits', doubles: 'doubles', triples: 'triples', homeRuns: 'home runs',
     runsBattedIn: 'RBI', stolenBases: 'stolen bases', walks: 'walks', battingAverage: 'batting average',
     onBasePercentage: 'on-base percentage', sluggingPercentage: 'slugging percentage', onBasePlusSlugging: 'OPS',
     wins: 'wins', saves: 'saves', inningsPitched: 'innings pitched', strikeouts: 'strikeouts',
@@ -34,7 +34,7 @@ window.PLAYER_LEADERS = (() => {
     const key = `${group}:${season}:${scope}:${pool}`;
     if (requests.has(key)) return requests.get(key);
     const task = (async () => {
-      const storageKey = `boxscore-leaders-v1:${key}`;
+      const storageKey = `boxscore-leaders-v2:${key}`;
       const ttl = Number(season) < new Date().getFullYear() ? 30 * 86400000 : 5 * 60000;
       try {
         const saved = JSON.parse(window.localStorage.getItem(storageKey));
