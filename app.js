@@ -149,7 +149,7 @@ function mergePybaseballStats(playerList) {
       war: fwar,
       note: fwar == null
         ? player.note
-        : `${player.note} fWAR from pybaseball FanGraphs batting_stats snapshot.`
+        : `${player.note} fWAR from the saved FanGraphs snapshot.`
     };
   });
 }
