@@ -8,6 +8,10 @@ let players = snapshot.players ?? [];
 const teams = snapshot.teams ?? [];
 const teamById = Object.fromEntries(teams.map((team) => [team.id, team]));
 
+function teamAbbreviation(team, fallback = "-") {
+  return team?.abbreviation ?? team?.abbr ?? teamById[String(team?.id)]?.abbr ?? fallback;
+}
+
 const els = {
   name: document.querySelector("#playerName"),
   headshot: document.querySelector("#playerHeadshot"),
@@ -246,7 +250,7 @@ function renderSearchResults(matches) {
 
 function renderSeason(player) {
   const wrc = finiteValue(advancedStatsForPlayer(player)?.wrc ?? player.wrc);
-  els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season stats`;
+  els.seasonLabel.textContent = `${snapshot.season ?? "Current"} Season Stats`;
   els.season.innerHTML = [
     statBlock("AVG", fmtRate(player.avg)),
     statBlock("OPS", fmtRate(player.ops)),
@@ -259,7 +263,7 @@ function renderSeason(player) {
 }
 
 function renderPitchingSeason(player) {
-  els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season stats`;
+  els.seasonLabel.textContent = `${snapshot.season ?? "Current"} Season Stats`;
   els.season.innerHTML = [
     statBlock("IP", player.ip),
     statBlock("ERA", fmtPitchingRate(player.era)),
@@ -296,7 +300,7 @@ function renderStatcast(player) {
   const role = pitching ? "pitcher" : "batter";
   const official = sources[`${role}Percentiles`]?.players?.[id] ?? {};
   panel.hidden = false;
-  document.querySelector("#statcastSeason").textContent = `${season} run values`;
+  document.querySelector("#statcastSeason").textContent = `${season} Run Values`;
   document.querySelector("#savantLink").href = `https://baseballsavant.mlb.com/savant-player/${encodeURIComponent(id)}`;
   const metrics = pitching ? [["pitching", "Pitching"]]
     : [["batting", "Batting"], ["fielding", "Fielding"], ["baserunning", "Baserunning"]];
@@ -341,11 +345,10 @@ function renderHeadshot(player) {
 }
 
 function renderLocalPlayer(player) {
-  const team = teamById[player.team] ?? {};
   renderPlayerHeader(player);
   els.bio.innerHTML = [
     statBlock("Position", player.pos),
-    statBlock("Team", team.name ?? player.teamAbbr),
+    statBlock("Team", teamAbbreviation({ id: player.team }, player.teamAbbr)),
     statBlock("Bats", "-"),
     statBlock("Throws", "-"),
     statBlock("Height", "-"),
@@ -425,7 +428,7 @@ function renderHistory(person, player) {
     document.querySelector(`#${key}HistoryHead`).innerHTML = `<tr>${labels.map((label) => `<th scope="col">${label}</th>`).join("")}</tr>`;
     document.querySelector(`#${key}HistoryRows`).innerHTML = rows.map((row) => {
       const team = row.isTotal ? `${row.numTeams ?? "Multiple"} teams` :
-        teamById[String(row.team.id)]?.abbr ?? row.team.abbreviation ?? row.team.name;
+        teamAbbreviation(row.team);
       const cells = [escapeHistory(row.stat.age), escapeHistory(team),
         ...columns.map(([, field]) => leaderValue(row.stat[field], player, field, group, row.season, !row.isStint)),
         ...["fwar", "bwar"].map(field => leaderValue(historyWar(player, row, field, group), player, field, group, row.season, !row.isStint))];
@@ -450,7 +453,7 @@ function careerWar(player, rows, measure, group) {
 }
 
 function renderBio(person, localPlayer) {
-  const team = person.currentTeam?.name ?? teamById[localPlayer.team]?.name ?? localPlayer.teamAbbr;
+  const team = teamAbbreviation(person.currentTeam ?? { id: localPlayer.team }, localPlayer.teamAbbr ?? "-");
   els.bio.innerHTML = [
     statBlock("Position", person.primaryPosition?.abbreviation ?? localPlayer.pos),
     statBlock("Team", team),
@@ -470,7 +473,7 @@ async function loadCareer(player) {
     return;
   }
   try {
-    const response = await fetch(`${API_BASE}/people/${player.mlbId}?hydrate=stats(group=[hitting,pitching],type=[career,yearByYear],sportIds=[1])`);
+    const response = await fetch(`${API_BASE}/people/${player.mlbId}?hydrate=currentTeam,stats(group=[hitting,pitching],type=[career,yearByYear],sportIds=[1])`);
     if (!response.ok) throw new Error("career fetch failed");
     const data = await response.json();
     const person = data.people?.[0];
