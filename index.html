@@ -106,7 +106,16 @@
           </table>
         </div>
         <div class="table-footer">
-          <button class="secondary-button" id="toggleTableRows" type="button">Show more</button>
+          <label class="leader-row-control" for="battingRowLimit">Show
+            <select id="battingRowLimit" aria-label="Number of batting leaders">
+              <option value="10">Top 10</option>
+              <option value="50">Top 50</option>
+              <option value="100">Top 100</option>
+              <option value="200">Top 200</option>
+              <option value="500">Top 500</option>
+              <option value="all">All qualified</option>
+            </select>
+          </label>
         </div>
       </section>
 
@@ -140,7 +149,16 @@
           </table>
         </div>
         <div class="table-footer">
-          <button class="secondary-button" id="togglePitcherRows" type="button">Show more</button>
+          <label class="leader-row-control" for="pitchingRowLimit">Show
+            <select id="pitchingRowLimit" aria-label="Number of pitching leaders">
+              <option value="10">Top 10</option>
+              <option value="50">Top 50</option>
+              <option value="100">Top 100</option>
+              <option value="200">Top 200</option>
+              <option value="500">Top 500</option>
+              <option value="all">All qualified</option>
+            </select>
+          </label>
         </div>
       </section>
 
