@@ -51,6 +51,9 @@ const els = {
   pitcherResultCount: document.querySelector("#pitcherResultCount"),
   togglePitcherRows: document.querySelector("#togglePitcherRows"),
   teamGrid: document.querySelector("#teamGrid"),
+  gamesGrid: document.querySelector("#gamesGrid"),
+  gamesStatus: document.querySelector("#gamesStatus"),
+  gamesDate: document.querySelector("#gamesDate"),
   seasonLabel: document.querySelector("#seasonLabel"),
   dataStatus: document.querySelector("#dataStatus"),
   drawer: document.querySelector("#playerDrawer"),
@@ -528,6 +531,7 @@ function qualifiedPlayers() {
 }
 
 function renderTeams() {
+  const qualified = qualifiedPlayers();
   const featuredTeams = teams
     .filter((team) => team.league === "AL" || team.league === "NL")
     .sort((a, b) => Number(b.winPct ?? 0) - Number(a.winPct ?? 0))
@@ -535,7 +539,7 @@ function renderTeams() {
 
   els.teamGrid.innerHTML = featuredTeams
     .map((team) => {
-      const roster = players.filter((player) => player.team === team.id && player.hasBatting !== false);
+      const roster = qualified.filter((player) => player.team === team.id);
       const best = [...roster].sort((a, b) => Number(b.ops ?? 0) - Number(a.ops ?? 0))[0];
       return `
         <article class="team-card" style="--team-color: ${team.color}">
@@ -545,7 +549,7 @@ function renderTeams() {
             <div><dt>Runs</dt><dd>${team.runs || "-"}</dd></div>
             <div><dt>Pct</dt><dd>${team.winPct ? fmtRate(team.winPct) : "-"}</dd></div>
           </dl>
-          <p class="leader-meta">Top bat: ${best ? `${best.name}, ${fmtRate(best.ops)} OPS` : "No hitter in current table"}</p>
+          <p class="leader-meta">Top bat: ${best ? `${best.name}, ${fmtRate(best.ops)} OPS` : "No qualified hitter"}</p>
         </article>
       `;
     })
@@ -738,4 +742,74 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeDrawer();
 });
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[character]);
+}
+
+function gameDay(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(date);
+  const part = (type) => parts.find((item) => item.type === type).value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function gameCard(game) {
+  const line = game.linescore ?? {};
+  const innings = line.innings ?? [];
+  const started = innings.length > 0;
+  const inningNumbers = Array.from({ length: Math.max(9, ...innings.map((inning) => inning.num)) }, (_, index) => index + 1);
+  const status = game.status ?? {};
+  const live = status.abstractGameState === "Live";
+  const startTime = new Date(game.gameDate);
+  const time = Number.isFinite(startTime.getTime())
+    ? startTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : "TBD";
+  const label = live && line.currentInning
+    ? `${status.detailedState ?? "Live"} / ${line.inningHalf ?? ""} ${line.currentInningOrdinal ?? line.currentInning}`
+    : status.abstractGameState === "Preview" && status.detailedState === "Scheduled" ? time : status.detailedState ?? time;
+  const row = (side) => {
+    const club = game.teams?.[side] ?? {};
+    const totals = line.teams?.[side] ?? {};
+    const cells = inningNumbers.map((number) => {
+      const inning = innings.find((item) => item.num === number);
+      const runs = inning?.[side]?.runs;
+      const finalUnplayedHome = side === "home" && status.abstractGameState === "Final" && inning && runs == null;
+      return `<td>${runs ?? (finalUnplayedHome ? "X" : "-")}</td>`;
+    }).join("");
+    return `<tr><th scope="row"><span class="game-team"><img src="https://www.mlbstatic.com/team-logos/${Number(club.team?.id)}.svg" alt="" width="22" height="22"><span>${escapeHtml(club.team?.abbreviation ?? club.team?.name ?? side)}</span></span></th>${cells}<td class="game-total">${totals.runs ?? club.score ?? "-"}</td><td>${started ? totals.hits ?? "-" : "-"}</td><td>${started ? totals.errors ?? "-" : "-"}</td></tr>`;
+  };
+  return `<article class="game-card"><div class="game-card-head"><span class="game-state${live ? " is-live" : ""}">${escapeHtml(label)}</span>${game.doubleHeader && game.doubleHeader !== "N" ? `<span>Game ${Number(game.gameNumber)}</span>` : ""}</div><div class="game-linescore"><table aria-label="${escapeHtml(game.teams?.away?.team?.name)} at ${escapeHtml(game.teams?.home?.team?.name)}"><thead><tr><th scope="col">Team</th>${inningNumbers.map((number) => `<th scope="col">${number}</th>`).join("")}<th scope="col">R</th><th scope="col">H</th><th scope="col">E</th></tr></thead><tbody>${row("away")}${row("home")}</tbody></table></div><div class="game-card-foot"><span>${escapeHtml(game.venue?.name ?? "")}</span><a href="https://www.mlb.com/gameday/${Number(game.gamePk)}/live/box" target="_blank" rel="noreferrer">Boxscore</a></div></article>`;
+}
+
+let gamesLoading = false;
+let displayedGameDay = null;
+
+async function loadTodayGames() {
+  if (gamesLoading) return;
+  gamesLoading = true;
+  const date = gameDay();
+  if (displayedGameDay !== date) els.gamesGrid.innerHTML = "";
+  els.gamesDate.textContent = new Date(`${date}T12:00:00-04:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" });
+  try {
+    const data = await fetchJson("/schedule", { sportId: "1", date, hydrate: "linescore,team" });
+    const games = (data.dates ?? []).flatMap((day) => day.games ?? []);
+    els.gamesGrid.innerHTML = games.map(gameCard).join("");
+    displayedGameDay = date;
+    els.gamesStatus.textContent = games.length
+      ? `Updated ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
+      : "No MLB games scheduled today.";
+  } catch (error) {
+    els.gamesStatus.textContent = displayedGameDay === date && els.gamesGrid.children.length
+      ? "Scores could not refresh. Showing last update."
+      : "Today's games are unavailable. Retrying shortly.";
+  } finally {
+    gamesLoading = false;
+  }
+}
+
+loadTodayGames();
+setInterval(() => { if (!document.hidden) loadTodayGames(); }, 30000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) loadTodayGames(); });
 loadMlbData();
