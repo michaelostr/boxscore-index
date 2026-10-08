@@ -76,6 +76,24 @@
         </div>
         <dl class="career-table" id="careerStats"></dl>
       </section>
+      <section class="panel" id="historyPanel">
+        <div class="section-head">
+          <h2>Season-by-season statistics</h2>
+          <p id="historyStatus" class="result-count" role="status">Loading season history...</p>
+        </div>
+        <div id="battingHistory" hidden>
+          <h3 class="history-heading">Batting</h3>
+          <div class="table-wrap history-wrap" role="region" aria-label="Season batting statistics" tabindex="0">
+            <table class="history-table"><caption class="visually-hidden">MLB regular-season batting statistics</caption><thead id="battingHistoryHead"></thead><tbody id="battingHistoryRows"></tbody></table>
+          </div>
+        </div>
+        <div id="pitchingHistory" hidden>
+          <h3 class="history-heading">Pitching</h3>
+          <div class="table-wrap history-wrap" role="region" aria-label="Season pitching statistics" tabindex="0">
+            <table class="history-table"><caption class="visually-hidden">MLB regular-season pitching statistics</caption><thead id="pitchingHistoryHead"></thead><tbody id="pitchingHistoryRows"></tbody></table>
+          </div>
+        </div>
+      </section>
     </main>
 
     <script src="./data/mlb_stats.js"></script>

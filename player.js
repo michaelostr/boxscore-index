@@ -16,6 +16,8 @@ const els = {
   seasonLabel: document.querySelector("#seasonStatsLabel"),
   career: document.querySelector("#careerStats"),
   careerStatus: document.querySelector("#careerStatus"),
+  historyPanel: document.querySelector("#historyPanel"),
+  historyStatus: document.querySelector("#historyStatus"),
   resultsPanel: document.querySelector("#searchResultsPanel"),
   results: document.querySelector("#searchResults"),
   bioPanel: document.querySelector("#bioGrid"),
@@ -281,6 +283,7 @@ function searchMatches() {
 }
 
 function renderSearchResults(matches) {
+  els.historyPanel.hidden = true;
   document.querySelector("#statcastPanel").hidden = true;
   els.resultsPanel.hidden = false;
   els.bioPanel.hidden = true;
@@ -447,9 +450,69 @@ function renderLocalPitcher(player) {
   renderPitchingSeason(player);
 }
 
-function careerStatsFromPerson(person) {
-  const statGroup = (person.stats ?? []).find((item) => item.type?.displayName === "career" || item.type?.type === "career");
+function careerStatsFromPerson(person, group = "hitting") {
+  const statGroup = (person.stats ?? []).find((item) =>
+    (item.type?.displayName === "career" || item.type?.type === "career") && item.group?.displayName === group);
   return statGroup?.splits?.[0]?.stat ?? null;
+}
+
+function historyRows(person, group) {
+  const splits = (person.stats ?? []).filter((item) =>
+    item.type?.displayName === "yearByYear" && item.group?.displayName === group)
+    .flatMap((item) => item.splits ?? [])
+    .filter((split) => /^\d{4}$/.test(String(split.season)) && split.stat &&
+      Number(split.sport?.id) === 1 && split.gameType === "R");
+  const seasons = new Map();
+  for (const split of splits) {
+    if (!seasons.has(split.season)) seasons.set(split.season, []);
+    seasons.get(split.season).push(split);
+  }
+  return [...seasons.entries()].sort(([a], [b]) => Number(a) - Number(b)).flatMap(([, rows]) => {
+    const totals = rows.filter((row) => !row.team?.id);
+    const stints = rows.filter((row) => row.team?.id);
+    return [...totals.map((row) => ({ ...row, isTotal: true, isStint: false })),
+      ...stints.map((row) => ({ ...row, isTotal: false, isStint: totals.length > 0 }))];
+  });
+}
+
+function escapeHistory(value) {
+  return String(value ?? "-").replace(/[&<>"']/g, (char) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+}
+
+function historyWar(player, row, measure, group) {
+  if (row.isStint) return "-";
+  const role = group === "pitching" ? "Pitching" : "Batting";
+  const source = window.WAR_DATA?.seasons?.[String(row.season)]?.sources?.[measure + role];
+  const value = finiteValue(source?.players?.[String(player.mlbId ?? player.id)]);
+  return value == null ? "-" : value.toFixed(1);
+}
+
+function renderHistory(person, player) {
+  let count = 0;
+  for (const group of ["hitting", "pitching"]) {
+    const key = group === "hitting" ? "batting" : "pitching";
+    const rows = historyRows(person, group);
+    document.querySelector(`#${key}History`).hidden = !rows.length;
+    count += rows.length;
+    const columns = group === "hitting"
+      ? [["G", "gamesPlayed"], ["PA", "plateAppearances"], ["AB", "atBats"], ["R", "runs"], ["H", "hits"],
+        ["2B", "doubles"], ["3B", "triples"], ["HR", "homeRuns"], ["RBI", "rbi"], ["SB", "stolenBases"],
+        ["BB", "baseOnBalls"], ["SO", "strikeOuts"], ["AVG", "avg"], ["OBP", "obp"], ["SLG", "slg"], ["OPS", "ops"]]
+      : [["G", "gamesPlayed"], ["GS", "gamesStarted"], ["W", "wins"], ["L", "losses"], ["SV", "saves"],
+        ["IP", "inningsPitched"], ["H", "hits"], ["ER", "earnedRuns"], ["HR", "homeRuns"], ["BB", "baseOnBalls"],
+        ["SO", "strikeOuts"], ["ERA", "era"], ["WHIP", "whip"]];
+    const labels = ["Season", "Age", "Team", ...columns.map(([label]) => label), "fWAR", "bWAR"];
+    document.querySelector(`#${key}HistoryHead`).innerHTML = `<tr>${labels.map((label) => `<th scope="col">${label}</th>`).join("")}</tr>`;
+    document.querySelector(`#${key}HistoryRows`).innerHTML = rows.map((row) => {
+      const team = row.isTotal ? `${row.numTeams ?? "Multiple"} teams` :
+        teamById[String(row.team.id)]?.abbr ?? row.team.abbreviation ?? row.team.name;
+      const values = [row.stat.age, team, ...columns.map(([, field]) => row.stat[field]),
+        historyWar(player, row, "fwar", group), historyWar(player, row, "bwar", group)];
+      return `<tr class="${row.isTotal ? "history-total" : row.isStint ? "history-stint" : ""}"><th scope="row">${escapeHistory(row.season)}</th>${values.map((value) => `<td>${escapeHistory(value)}</td>`).join("")}</tr>`;
+    }).join("");
+  }
+  els.historyStatus.textContent = count ? "" : "No MLB regular-season history available.";
 }
 
 function renderBio(person, localPlayer) {
@@ -508,18 +571,21 @@ function renderCareer(stat, group = "hitting") {
 async function loadCareer(player, group = "hitting") {
   if (!player.mlbId) {
     els.careerStatus.textContent = "Career stats unavailable from MLB right now.";
+    els.historyStatus.textContent = "Season history unavailable from MLB right now.";
     return;
   }
   try {
-    const response = await fetch(`${API_BASE}/people/${player.mlbId}?hydrate=stats(group=[${group}],type=[career])`);
+    const response = await fetch(`${API_BASE}/people/${player.mlbId}?hydrate=stats(group=[hitting,pitching],type=[career,yearByYear],sportIds=[1])`);
     if (!response.ok) throw new Error("career fetch failed");
     const data = await response.json();
     const person = data.people?.[0];
     if (!person) throw new Error("player not found");
     renderBio(person, player);
-    renderCareer(careerStatsFromPerson(person), group);
+    renderCareer(careerStatsFromPerson(person, group), group);
+    renderHistory(person, player);
   } catch (error) {
     els.careerStatus.textContent = "Career stats unavailable from MLB right now.";
+    els.historyStatus.textContent = "Season history unavailable from MLB right now.";
   }
 }
 
@@ -569,6 +635,7 @@ if (player) {
       els.bioPanel.hidden = true;
       els.seasonPanel.hidden = true;
       els.careerPanel.hidden = true;
+      els.historyPanel.hidden = true;
       els.careerStatus.textContent = "";
     });
   }
