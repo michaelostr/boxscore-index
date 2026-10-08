@@ -43,7 +43,7 @@ async function main() {
   assert.match(leaders.format(7, 3, 'hitting', 2024, 'fwar'), /saved WAR snapshot/);
   assert.equal(leaders.format(30, 3, 'hitting', 2024, 'homeRuns', false), '30');
   assert.equal(leaders.format(30, 3, 'hitting', 2023, 'homeRuns'), '30');
-  assert.match(leaders.format(30, 3, 'hitting', 2024, 'homeRuns'), /Led/);
+  assert.doesNotMatch(leaders.format(30, 3, 'hitting', 2024, 'homeRuns'), /<sup|title=/);
   assert.equal(leaders.format('<missing>', 999, 'hitting', 2024, 'homeRuns'), '&lt;missing&gt;');
   assert.ok(calls.some(url => url.searchParams.get('playerPool') === 'QUALIFIED' &&
     url.searchParams.get('leaderCategories').includes('earnedRunAverage')));
@@ -70,7 +70,9 @@ async function main() {
   assert.doesNotMatch(tableRows[1], /stat-leader/);
   assert.doesNotMatch(elements.get('#battingHistoryTotals').innerHTML, /stat-leader/);
   vm.runInContext('renderSeason({ id: 3, hr: 30, avg: .3, ops: .9 })', context);
-  assert.match(elements.get('#seasonStats').innerHTML, /leader-mlb/);
+  assert.doesNotMatch(elements.get('#seasonStats').innerHTML, /stat-leader|title=|<sup/);
+  vm.runInContext('renderPitchingSeason({ id: 3, ip: "100.0", era: 2.5, whip: 1, p_so: 150 })', context);
+  assert.doesNotMatch(elements.get('#seasonStats').innerHTML, /stat-leader|title=|<sup/);
   if (process.argv.includes('--live')) {
     context.fetch = fetch;
     await leaders.load([{ group: 'hitting', season: '2022' }, { group: 'pitching', season: '2020' }], () => {});
