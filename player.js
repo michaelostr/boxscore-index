@@ -335,6 +335,17 @@ function renderPlayerHeader(player) {
   renderStatcast(player);
 }
 
+function runValuePercentile(source, id, metric) {
+  const value = finiteValue(source?.players?.[id]?.[metric]);
+  if (value == null) return null;
+  const values = Object.values(source?.players ?? {})
+    .map((player) => finiteValue(player[metric])).filter((item) => item != null);
+  if (values.length < 2) return null;
+  const below = values.filter((item) => item < value).length;
+  const equal = values.filter((item) => item === value).length;
+  return { value: 100 * (below + equal / 2) / values.length, count: values.length };
+}
+
 function renderStatcast(player) {
   const panel = document.querySelector("#statcastPanel");
   const season = Number(params.get("season") || snapshot.season || new Date().getFullYear());
@@ -342,40 +353,36 @@ function renderStatcast(player) {
   const sources = window.STATCAST_DATA?.seasons?.[String(season)]?.sources ?? {};
   const id = String(player.mlbId ?? player.id);
   const role = pitching ? "pitcher" : "batter";
-  const percentiles = sources[`${role}Percentiles`]?.players?.[id] ?? {};
-  const valueSources = [`${role}Expected`, `${role}Contact`, ...(pitching ? [] : ["speed"])];
+  const official = sources[`${role}Percentiles`]?.players?.[id] ?? {};
   panel.hidden = false;
   document.querySelector("#statcastSeason").textContent = `${season} Statcast`;
   document.querySelector("#savantLink").href = `https://baseballsavant.mlb.com/savant-player/${encodeURIComponent(id)}`;
-  const metrics = pitching
-    ? [["xwoba", "xwOBA", 3], ["xba", "xBA", 3], ["xslg", "xSLG", 3], ["xera", "xERA", 2], ["strikeout", "K%", 1], ["walk", "BB%", 1], ["whiff", "Whiff%", 1], ["chase", "Chase%", 1], ["hardHit", "Hard-hit%", 1], ["barrel", "Barrel%", 1]]
-    : [["xwoba", "xwOBA", 3], ["xba", "xBA", 3], ["xslg", "xSLG", 3], ["exitVelocity", "Avg. exit velocity", 1], ["hardHit", "Hard-hit%", 1], ["barrel", "Barrel%", 1], ["batSpeed", "Bat speed", 1], ["strikeout", "K%", 1], ["walk", "BB%", 1], ["chase", "Chase%", 1], ["whiff", "Whiff%", 1], ["sprintSpeed", "Sprint speed", 1], ["oaa", "Outs above average", 0], ["armStrength", "Arm strength", 1]];
-  const runs = pitching ? [["pitching", "Pitching run value"]]
+  const metrics = pitching ? [["pitching", "Pitching run value"]]
     : [["batting", "Batting run value"], ["fielding", "Fielding run value"], ["baserunning", "Baserunning run value"]];
-  const used = new Set();
+  const timestamps = [];
   let available = false;
-  document.querySelector("#statcastRunValues").innerHTML = runs.map(([key, label]) => {
-    const value = finiteValue(sources[key]?.players?.[id]?.[`${key}RunValue`]);
-    if (value != null) { used.add(key); available = true; }
-    const date = sources[key]?.updatedAt;
-    const stamp = value != null && date ? `<small>Updated ${new Date(date).toLocaleDateString()}</small>` : "";
-    return `<div><dt>${label}</dt><dd>${value == null ? "-" : `${value > 0 ? "+" : ""}${value.toFixed(1)}`}</dd>${stamp}</div>`;
+  document.querySelector("#statcastRows").innerHTML = metrics.map(([key, label]) => {
+    const metric = `${key}RunValue`;
+    const source = sources[key];
+    const value = finiteValue(source?.players?.[id]?.[metric]);
+    const rank = runValuePercentile(source, id, metric);
+    const published = finiteValue(official[metric]);
+    const percentile = published ?? rank?.value ?? null;
+    if (value != null) {
+      available = true;
+      timestamps.push(Date.parse(source.updatedAt));
+    }
+    const title = published != null ? "Official Baseball Savant percentile"
+      : rank ? `Calculated among ${rank.count} players in the saved ${key} leaderboard; higher run value ranks higher. Ties use the midpoint rank.` : "Percentile unavailable";
+    const bar = percentile == null ? "-" : `<div class="percentile-cell" title="${title}"><meter min="0" max="100" value="${percentile}" aria-label="${label} percentile" class="percentile-meter ${percentile >= 70 ? "high" : percentile <= 30 ? "low" : "middle"}">${percentile}</meter><span>${Math.round(percentile)}</span></div>`;
+    const runs = value == null ? "-" : `${value > 0 ? "+" : ""}${value.toFixed(1)}`;
+    return `<tr><th scope="row">${label}</th><td>${runs}</td><td>${bar}</td></tr>`;
   }).join("");
-  document.querySelector("#statcastRows").innerHTML = metrics.map(([key, label, digits]) => {
-    const valueSource = valueSources.find((name) => finiteValue(sources[name]?.players?.[id]?.[key]) != null);
-    const value = finiteValue(sources[valueSource]?.players?.[id]?.[key]);
-    const percentile = finiteValue(percentiles[key]);
-    if (value != null) used.add(valueSource);
-    if (percentile != null) used.add(`${role}Percentiles`);
-    available ||= value != null || percentile != null;
-    const bar = percentile == null ? "-" : `<div class="percentile-cell"><meter min="0" max="100" value="${percentile}" aria-label="${label} percentile" class="percentile-meter ${percentile >= 70 ? "high" : percentile <= 30 ? "low" : "middle"}">${percentile}</meter><span>${Math.round(percentile)}</span></div>`;
-    return `<tr><th scope="row">${label}</th><td>${value == null ? "-" : value.toFixed(digits)}</td><td>${bar}</td></tr>`;
-  }).join("");
-  const timestamps = [...used].map((key) => Date.parse(sources[key]?.updatedAt)).filter(Number.isFinite);
-  const stale = timestamps.length && Date.now() - Math.min(...timestamps) > 48 * 60 * 60 * 1000;
+  const validDates = timestamps.filter(Number.isFinite);
+  const stale = validDates.length && Date.now() - Math.min(...validDates) > 48 * 60 * 60 * 1000;
   document.querySelector("#statcastStatus").textContent = !available
-    ? "No saved Statcast data for this player and season."
-    : `${stale ? "Showing last available data. " : ""}${timestamps.length ? `Updated ${new Date(Math.min(...timestamps)).toLocaleDateString()}.` : ""}`;
+    ? "No saved run values for this player and season."
+    : `Leaderboard percentiles. ${stale ? "Last available data. " : ""}${validDates.length ? `Updated ${new Date(Math.min(...validDates)).toLocaleDateString()}.` : ""}`;
 }
 
 function renderHeadshot(player) {
