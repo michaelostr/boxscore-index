@@ -134,6 +134,8 @@ def update(season, path=OUT, fetch=download):
         url = "https://baseballsavant.mlb.com/leaderboard/" + endpoint + "?" + urlencode({**params, "csv": "true"})
         try:
             rows = fetch(url)
+            if rows:
+                print(f"{name} columns: {', '.join(str(key) for key in rows[0])}")
             # Reject a different-season export rather than relabeling it.
             for row in rows:
                 year = pick(row, ("year", "season"))
@@ -143,6 +145,8 @@ def update(season, path=OUT, fetch=download):
             sources[name] = {"updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"), "url": url, "players": players}
             succeeded += 1
             print(f"{name}: {len(players)} players")
+            if "691718" in players:
+                print(f"{name} example: {json.dumps(players['691718'])}")
         except Exception as error:
             print(f"{name}: {error} (previous data retained)", file=sys.stderr)
     if succeeded:
@@ -158,4 +162,3 @@ if __name__ == "__main__":
     parser.add_argument("--season", type=int, default=datetime.now(timezone.utc).year)
     args = parser.parse_args()
     sys.exit(0 if update(args.season) else 1)
-
