@@ -18,8 +18,8 @@ METRICS = {
     "xba": ("xba", "est_ba"),
     "xslg": ("xslg", "est_slg"),
     "xera": ("xera", "est_era"),
-    "exitVelocity": ("exit_velocity_avg", "avg_hit_speed"),
-    "hardHit": ("hard_hit_percent", "hard_hit_rate"),
+    "exitVelocity": ("exit_velocity_avg", "exit_velocity", "avg_hit_speed"),
+    "hardHit": ("hard_hit_percent", "hard_hit_rate", "ev95percent"),
     "barrel": ("barrel_batted_rate", "brl_percent"),
     "strikeout": ("k_percent", "strikeout_percent"),
     "walk": ("bb_percent", "walk_percent"),
@@ -74,8 +74,8 @@ def normalize(rows, kind):
                     metrics[key] = value
         else:
             aliases = {
-                "batting": ("run_value", "all", "batting_run_value"),
-                "pitching": ("run_value", "all", "pitching_run_value"),
+                "batting": ("runs_all", "run_value", "all", "batting_run_value"),
+                "pitching": ("runs_all", "run_value", "all", "pitching_run_value"),
                 "fielding": ("total_runs", "fielding_run_value", "total_fielding_run_value"),
                 "baserunning": ("runner_runs_tot", "baserunning_run_value"),
             }[kind]
@@ -136,6 +136,8 @@ def update(season, path=OUT, fetch=download):
             rows = fetch(url)
             if rows:
                 print(f"{name} columns: {', '.join(str(key) for key in rows[0])}")
+                if name == "fielding":
+                    print(f"fielding first row: {json.dumps(rows[0])}")
             # Reject a different-season export rather than relabeling it.
             for row in rows:
                 year = pick(row, ("year", "season"))
