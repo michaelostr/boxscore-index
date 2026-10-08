@@ -79,7 +79,7 @@ def baseball_reference(season, role, fetch=get):
     return normalize(rows, season, "bwar"), url
 
 
-def update(season, path=OUT, fetch=get):
+def update(season, path=OUT, fetch=get, skip_existing=False):
     if path.exists():
         text = path.read_text(encoding="utf-8")
         if not text.startswith(PREFIX):
@@ -91,13 +91,16 @@ def update(season, path=OUT, fetch=get):
     successes = 0
     for name, loader, role in (("fwarBatting", fangraphs, "bat"), ("fwarPitching", fangraphs, "pit"),
                                ("bwarBatting", baseball_reference, "bat"), ("bwarPitching", baseball_reference, "pitch")):
+        if skip_existing and sources.get(name, {}).get("players"):
+            successes += 1
+            continue
         try:
             players, url = loader(season, role, fetch)
             sources[name] = {"players": players, "updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"), "url": url}
             successes += 1
-            print(f"{name}: {len(players)} players")
+            print(f"{season} {name}: {len(players)} players", flush=True)
         except Exception as error:
-            print(f"{name}: {error}; previous values retained", file=sys.stderr)
+            print(f"{season} {name}: {error}; previous values retained", file=sys.stderr)
     if successes:
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".tmp")
@@ -106,9 +109,37 @@ def update(season, path=OUT, fetch=get):
     return successes
 
 
+def backfill(start, end, path=OUT, fetch=get):
+    if start < 1876 or start > end:
+        raise ValueError("Backfill start must be between 1876 and the requested season")
+    daily_exports = {}
+
+    def cached_fetch(url):
+        # These two exports contain every season; download each only once per run.
+        if url.startswith("https://www.baseball-reference.com/data/war_daily_"):
+            if url not in daily_exports:
+                daily_exports[url] = fetch(url)
+            return daily_exports[url]
+        return fetch(url)
+
+    incomplete = []
+    for season in range(start, end + 1):
+        available = update(season, path, cached_fetch, skip_existing=season < end)
+        if available != 4:
+            incomplete.append(season)
+    if incomplete:
+        print("Incomplete WAR seasons: " + ", ".join(map(str, incomplete)), file=sys.stderr)
+    return not incomplete
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--season", type=int, default=datetime.now(timezone.utc).year)
+    parser.add_argument("--backfill-from", type=int, help="Fill missing historical sources through --season; refresh the final season")
     args = parser.parse_args()
+    if args.backfill_from is not None:
+        if not 1876 <= args.backfill_from <= args.season:
+            parser.error("--backfill-from must be between 1876 and --season")
+        sys.exit(0 if backfill(args.backfill_from, args.season) else 1)
     sys.exit(0 if update(args.season) else 1)
 

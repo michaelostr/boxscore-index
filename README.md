@@ -54,7 +54,7 @@ Run updater tests with `python scripts/test_statcast.py`.
 
 Season stats show FanGraphs fWAR and Baseball-Reference bWAR separately for batting and pitching. The home batting table also uses the saved FanGraphs values. These are provider values, not local estimates, matched using verified MLB IDs. Batting WAR and pitching WAR are separate contributions for two-way players, not a combined total.
 
-The Update WAR workflow fetches both providers every six hours. Each successful source has its own timestamp in `data/war.js`; failed downloads preserve the previous values. Missing values display as a dash, including when a player has no entry for the selected season. GitHub runners successfully retrieved all four feeds in the initial access test; local access may still be blocked by the providers.
+The Update WAR workflow fetches both providers every six hours. It also backfills missing seasons from 2000 through the selected year, reusing complete past-season sources on later runs. Each successful source has its own timestamp in `data/war.js`; failed downloads preserve the previous values, and partial backfills are saved and retried. Missing values display as a dash, including when a player has no entry for the selected season. GitHub runners successfully retrieved all four feeds in the initial access test; local access may still be blocked by the providers. A manual workflow run can choose an earlier backfill start year.
 
-Run locally with `python scripts/update_war.py --season 2026`, and test with `python scripts/test_war.py`.
+Run locally with `python scripts/update_war.py --season 2026`, or include history with `python scripts/update_war.py --season 2026 --backfill-from 2000`. Test with `python scripts/test_war.py`. Complete historical coverage automatically fills the season-by-season WAR columns and cumulative career WAR totals on player pages.
 

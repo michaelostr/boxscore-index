@@ -7,6 +7,10 @@ on:
         description: Season (blank for current year)
         required: false
         type: string
+      backfill_from:
+        description: First historical season (defaults to 2000)
+        required: false
+        type: string
   schedule:
     - cron: '43 */6 * * *'
   push:
@@ -32,7 +36,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,13 +47,15 @@ jobs:
       - name: Validate and fetch WAR
         env:
           REQUESTED_SEASON: ${{ inputs.season }}
+          BACKFILL_FROM: ${{ inputs.backfill_from }}
         run: |
           python scripts/test_war.py
           node scripts/test_war_ui.cjs
           season="${REQUESTED_SEASON:-$(date -u +%Y)}"
-          python scripts/update_war.py --season "$season"
+          first="${BACKFILL_FROM:-2000}"
+          python scripts/update_war.py --season "$season" --backfill-from "$first"
       - name: Save verified values
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        if: always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
