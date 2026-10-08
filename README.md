@@ -26,7 +26,7 @@ The site will try live MLB.com data first in the browser, then use local snapsho
 
 ## Statcast Profiles
 
-Player pages read `data/statcast.js`, keyed by season and MLB player ID. The snapshot stores official Savant percentiles separately from metric values and run values. Missing data is shown as a dash, and older saved data is identified on the page.
+Player pages read `data/statcast.js`, keyed by season and MLB player ID, and display only run values and their leaderboard percentiles. When no official run-value percentile is supplied, the page calculates a midpoint rank within that metric's saved leaderboard and labels it as a leaderboard percentile. These ranks may differ from Savant's player-profile percentiles because the qualifying populations can differ. Missing data is shown as a dash, and older saved data is identified on the page.
 
 The Update Statcast workflow downloads and validates Savant exports every six hours on the default branch. You can also run it from GitHub's Actions tab and select a season. Downloads are automatic; no manual CSV exports are needed. Each failed feed retains its previous successful snapshot and timestamp. A completely failed update fails the workflow without changing saved data.
 
