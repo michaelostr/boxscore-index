@@ -67,7 +67,6 @@ def fangraphs(season, role, fetch=get):
         raise ValueError("No FanGraphs leaderboard rows")
     if len(rows) >= 10000:
         raise ValueError("FanGraphs results may be truncated")
-    print(f"FanGraphs {role} columns: {list(rows[0])}")
     return normalize(rows, season, "fwar"), url
 
 
@@ -77,8 +76,6 @@ def baseball_reference(season, role, fetch=get):
     if text.lstrip().startswith("<"):
         raise ValueError("Baseball-Reference returned HTML instead of WAR data")
     rows = list(csv.DictReader(StringIO(text)))
-    if rows:
-        print(f"Baseball-Reference {role} columns: {list(rows[0])}")
     return normalize(rows, season, "bwar"), url
 
 
