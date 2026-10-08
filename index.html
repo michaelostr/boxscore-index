@@ -16,28 +16,27 @@
         </span>
       </a>
       <nav aria-label="Primary">
-        <a href="#players">Players</a>
+        <a href="#games">Games</a>
+        <a href="#players">Batting</a>
         <a href="#pitchers">Pitchers</a>
         <a href="#teams">Teams</a>
         <a href="#glossary">Glossary</a>
       </nav>
     </header>
 
-    <main>
+    <main class="dashboard-page">
+      <div class="dashboard-heading">
       <section class="overview" id="overview">
         <div class="overview-copy">
           <p class="eyebrow"><span id="seasonLabel">MLB season</span></p>
-          <h1>MLB player lookup, sortable batting, and pitchers.</h1>
-          <p>
-            Search hitters and pitchers, scan qualified batting and pitching tables, and open compact player pages with current-season and career lines.
-          </p>
+          <h1>MLB statistics</h1>
         </div>
       </section>
 
       <section class="toolbar search-toolbar" aria-label="Player search">
         <form class="search-form" id="playerSearchForm">
           <label class="search-box">
-            <span>Search</span>
+            <span class="visually-hidden">Search players</span>
             <input id="searchInput" type="search" placeholder="Find a player or pitcher" autocomplete="off" />
           </label>
           <button class="icon-button" type="submit" aria-label="Open selected player" title="Open selected player">
@@ -49,10 +48,22 @@
           <div class="search-dropdown" id="playerSearchDropdown" hidden></div>
         </form>
       </section>
+      </div>
 
       <section class="data-status" aria-live="polite">
         <p id="dataStatus">Loading MLB statistics...</p>
         <a href="https://www.mlb.com/stats" target="_blank" rel="noreferrer">MLB stats source</a>
+      </section>
+
+      <section class="games-section" id="games" aria-labelledby="gamesHeading">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow" id="gamesDate">Today</p>
+            <h2 id="gamesHeading">Today's games</h2>
+          </div>
+          <p class="result-count" id="gamesStatus" role="status">Loading games...</p>
+        </div>
+        <div class="games-grid" id="gamesGrid"></div>
       </section>
 
       <section class="panel standings" id="teams">
@@ -69,7 +80,7 @@
         <div class="section-head">
           <div>
             <p class="eyebrow">Qualified hitters</p>
-            <h2>Sortable batting table</h2>
+            <h2>Batting leaders</h2>
           </div>
           <p id="resultCount" class="result-count">0 results</p>
         </div>
@@ -103,7 +114,7 @@
         <div class="section-head">
           <div>
             <p class="eyebrow">Qualified pitchers</p>
-            <h2>Top pitching table</h2>
+            <h2>Pitching leaders</h2>
           </div>
           <p id="pitcherResultCount" class="result-count">0 results</p>
         </div>
