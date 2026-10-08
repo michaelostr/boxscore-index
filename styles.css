@@ -744,3 +744,26 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+
+.statcast-section { margin: 24px 0; }
+.statcast-section .section-head { padding-left: 0; padding-right: 0; flex-wrap: wrap; }
+.statcast-section .section-head a { color: var(--green-dark); font-size: 0.85rem; }
+.statcast-run-values { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.statcast-run-values dt { color: var(--muted); font-size: 0.85rem; }
+.statcast-run-values dd { margin: 6px 0; font-size: 1.5rem; font-weight: 700; }
+.statcast-run-values small { color: var(--muted); font-size: 0.75rem; }
+.statcast-table-wrap { overflow-x: auto; }
+.statcast-table { width: 100%; min-width: 0; table-layout: fixed; }
+.statcast-table th:first-child { width: 40%; }
+.statcast-table th:nth-child(2) { width: 20%; }
+.statcast-table th, .statcast-table td { white-space: normal; overflow-wrap: anywhere; }
+.statcast-table tbody th { text-transform: none; }
+.percentile-cell { display: flex; align-items: center; gap: 8px; }
+.percentile-cell span { min-width: 3ch; font-variant-numeric: tabular-nums; }
+.percentile-meter { width: 100%; height: 12px; min-width: 0; --bar-color: #87958d; }
+.percentile-meter.high { --bar-color: #c64545; }
+.percentile-meter.low { --bar-color: #337bb0; }
+.percentile-meter::-webkit-meter-bar { background: #e9edeb; border: 0; border-radius: 3px; }
+.percentile-meter::-webkit-meter-optimum-value { background: var(--bar-color); }
+.percentile-meter::-moz-meter-bar { background: var(--bar-color); }
+
