@@ -37,3 +37,12 @@ python scripts/update_statcast.py --season 2026
 ```
 
 Run updater tests with `python scripts/test_statcast.py`.
+
+## Wins Above Replacement
+
+Season stats show FanGraphs fWAR and Baseball-Reference bWAR separately for batting and pitching. The home batting table also uses the saved FanGraphs values. These are provider values, not local estimates, matched using verified MLB IDs. Batting WAR and pitching WAR are separate contributions for two-way players, not a combined total.
+
+The Update WAR workflow fetches both providers every six hours. Each successful source has its own timestamp in `data/war.js`; failed downloads preserve the previous values. Missing values display as a dash, including when a player has no entry for the selected season. GitHub runners successfully retrieved all four feeds in the initial access test; local access may still be blocked by the providers.
+
+Run locally with `python scripts/update_war.py --season 2026`, and test with `python scripts/test_war.py`.
+
