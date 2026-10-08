@@ -28,6 +28,8 @@ Home batting and pitching leader tables show 10 qualified players initially. Sho
 
 Player pages load MLB regular-season, season-by-season batting and pitching history along with career totals. Traded seasons include MLB's official combined totals followed by team stints. Historical WAR is displayed only when that season has a saved official snapshot; team stints do not repeat full-season WAR.
 
+History team abbreviations are resolved from MLB's team directory for each season, with saved team-name matches as an immediate fallback. This supports both numeric MLB team IDs and abbreviation-keyed local snapshots. Player bios retain full team names.
+
 Season summaries show only key statistics and verified wRC+ when available, without an estimate fallback. Each history table ends with MLB's official cumulative career row. Career WAR is summed once per season only when all seasons in that history have saved values; incomplete coverage displays a dash.
 
 Season-by-season leader values are bold and colored red for AL, blue for NL, or gold for MLB, with a color key at the bottom of the player page. There are no leader superscripts or hover tooltips, and the top season summary stays unmarked. Gold takes precedence; tied leaders are all highlighted. MLB's official leader feeds supply batting R, H, 2B, 3B, HR, RBI, SB, BB, AVG, OBP, SLG, OPS and pitching W, SV, IP, SO, ERA, WHIP. Rate statistics use the qualified pool; counting statistics use all players. MLB handles lower-is-better pitching rates and cross-league traded-player splits. Career totals and team-stint rows are never marked. Saved WAR snapshots support MLB-wide WAR leaders only, without inferring league WAR from current teams. Unsupported statistics remain unmarked.
