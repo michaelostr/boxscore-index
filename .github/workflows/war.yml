@@ -13,11 +13,13 @@ on:
     paths:
       - scripts/update_war.py
       - scripts/test_war.py
+      - scripts/test_war_ui.cjs
       - .github/workflows/war.yml
   pull_request:
     paths:
       - scripts/update_war.py
       - scripts/test_war.py
+      - scripts/test_war_ui.cjs
       - .github/workflows/war.yml
 
 permissions:
@@ -43,6 +45,7 @@ jobs:
           REQUESTED_SEASON: ${{ inputs.season }}
         run: |
           python scripts/test_war.py
+          node scripts/test_war_ui.cjs
           season="${REQUESTED_SEASON:-$(date -u +%Y)}"
           python scripts/update_war.py --season "$season"
       - name: Save verified values
