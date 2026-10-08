@@ -2,7 +2,7 @@ const API_BASE = "https://statsapi.mlb.com/api/v1";
 const MLB_STATS_TABLE_BASE = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/player";
 const CURRENT_SEASON = new Date().getFullYear();
 const DEFAULT_LIMIT = 5000;
-const DEFAULT_TABLE_ROWS = 50;
+const DEFAULT_TABLE_ROWS = 10;
 
 const sampleTeams = [
   { id: "147", abbr: "NYY", name: "New York Yankees", league: "AL", record: "0-0", runs: 0, era: 0, color: "#315f8c" },
@@ -30,8 +30,8 @@ const state = {
   season: CURRENT_SEASON,
   sortKey: "fwar",
   sortDir: "desc",
-  tableExpanded: false,
-  pitchingExpanded: false,
+  battingRowLimit: DEFAULT_TABLE_ROWS,
+  pitchingRowLimit: DEFAULT_TABLE_ROWS,
   usingFallback: false
 };
 
@@ -46,10 +46,10 @@ const els = {
   searchDropdown: document.querySelector("#playerSearchDropdown"),
   rows: document.querySelector("#playerRows"),
   resultCount: document.querySelector("#resultCount"),
-  toggleRows: document.querySelector("#toggleTableRows"),
+  battingRowLimit: document.querySelector("#battingRowLimit"),
   pitcherRows: document.querySelector("#pitcherRows"),
   pitcherResultCount: document.querySelector("#pitcherResultCount"),
-  togglePitcherRows: document.querySelector("#togglePitcherRows"),
+  pitchingRowLimit: document.querySelector("#pitchingRowLimit"),
   teamGrid: document.querySelector("#teamGrid"),
   gamesGrid: document.querySelector("#gamesGrid"),
   gamesStatus: document.querySelector("#gamesStatus"),
@@ -426,10 +426,8 @@ function sortPlayers(list) {
 function renderTable() {
   if (!hasFwar() && state.sortKey === "fwar") state.sortKey = "ops";
   const list = sortPlayers(filteredPlayers());
-  const visible = state.tableExpanded ? list : list.slice(0, DEFAULT_TABLE_ROWS);
+  const visible = list.slice(0, state.battingRowLimit);
   els.resultCount.textContent = `Showing ${visible.length} of ${list.length} qualified hitter${list.length === 1 ? "" : "s"}`;
-  els.toggleRows.hidden = list.length <= DEFAULT_TABLE_ROWS;
-  els.toggleRows.textContent = state.tableExpanded ? "Show fewer" : "Show more";
   els.rows.innerHTML = visible
     .map((player) => {
       const team = teamById[player.team] ?? {};
@@ -451,6 +449,12 @@ function renderTable() {
       `;
     })
     .join("");
+}
+
+function tableRowLimit(value) {
+  if (value === "all") return Infinity;
+  const limit = Number(value);
+  return [10, 50, 100, 200, 500].includes(limit) ? limit : DEFAULT_TABLE_ROWS;
 }
 
 function allPitchers() {
@@ -480,10 +484,8 @@ function qualifiedPitchers() {
 
 function renderPitchingTable() {
   const list = qualifiedPitchers().sort((a, b) => Number(a.era ?? 99) - Number(b.era ?? 99));
-  const visible = state.pitchingExpanded ? list : list.slice(0, DEFAULT_TABLE_ROWS);
+  const visible = list.slice(0, state.pitchingRowLimit);
   els.pitcherResultCount.textContent = `Showing ${visible.length} of ${list.length} qualified pitcher${list.length === 1 ? "" : "s"}`;
-  els.togglePitcherRows.hidden = list.length <= DEFAULT_TABLE_ROWS;
-  els.togglePitcherRows.textContent = state.pitchingExpanded ? "Show fewer" : "Show more";
   els.pitcherRows.innerHTML = visible
     .map((player) => {
       const team = teamById[player.team] ?? {};
@@ -709,13 +711,13 @@ document.addEventListener("click", (event) => {
   if (!els.searchForm.contains(event.target)) els.searchDropdown.hidden = true;
 });
 
-els.toggleRows.addEventListener("click", () => {
-  state.tableExpanded = !state.tableExpanded;
+els.battingRowLimit.addEventListener("change", () => {
+  state.battingRowLimit = tableRowLimit(els.battingRowLimit.value);
   renderTable();
 });
 
-els.togglePitcherRows.addEventListener("click", () => {
-  state.pitchingExpanded = !state.pitchingExpanded;
+els.pitchingRowLimit.addEventListener("change", () => {
+  state.pitchingRowLimit = tableRowLimit(els.pitchingRowLimit.value);
   renderPitchingTable();
 });
 

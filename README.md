@@ -24,6 +24,8 @@ python scripts/update_mlb_stats.py --season 2026
 
 The site will try live MLB.com data first in the browser, then use local snapshots as a fallback.
 
+Home batting and pitching leader tables show 10 qualified players initially. Each table has an independent dropdown for 10, 50, 100, 200, 500, or all qualified players. Limits apply after sorting and do not limit the player search pool. Run `node scripts/test_home_row_limits.cjs` for row-limit checks.
+
 Player pages load MLB regular-season, season-by-season batting and pitching history along with career totals. Traded seasons include MLB's official combined totals followed by team stints. Historical WAR is displayed only when that season has a saved official snapshot; team stints do not repeat full-season WAR.
 
 Season summaries show only key statistics and verified wRC+ when available, without an estimate fallback. Each history table ends with MLB's official cumulative career row. Career WAR is summed once per season only when all seasons in that history have saved values; incomplete coverage displays a dash.
