@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const elements = new Map();
 const context = vm.createContext({ URLSearchParams, window: {
-  location: { search: '?id=1&season=2026' }, MLB_STATS_DATA: { players: [], teams: [] },
+  location: { search: '?id=1&season=2026' }, MLB_STATS_DATA: { season: 2026, players: [], teams: [] },
   WAR_DATA: { seasons: { '2026': { sources: { fwarBatting: { players: { '1': 0 } },
     bwarPitching: { players: { '1': -0.7 } } } } } }
 }, document: { querySelector(selector) {
@@ -49,6 +49,7 @@ vm.runInContext('window.WAR_DATA.seasons["2025"] = { sources: { fwarBatting: { p
 assert.equal(vm.runInContext('careerWar({ id: 1 }, historyRows(person, "hitting"), "fwar", "hitting")', context), '1.3');
 vm.runInContext('renderSeason({ id: 1, avg: .3, ops: .9, hr: 20, rbi: 60 })', context);
 assert.equal((elements.get('#seasonStats').innerHTML.match(/<dt>/g) ?? []).length, 6);
+assert.equal(elements.get('#seasonStatsLabel').textContent, '2026 season stats');
 assert.doesNotMatch(elements.get('#seasonStats').innerHTML, /wRC|est\./);
 vm.runInContext('renderSeason({ id: 1, wrc: 0 })', context);
 assert.match(elements.get('#seasonStats').innerHTML, /wRC\+<\/dt><dd>0/);
@@ -57,6 +58,13 @@ assert.equal((elements.get('#seasonStats').innerHTML.match(/<dt>/g) ?? []).lengt
 vm.runInContext('renderHistory({ stats: [] }, { id: 1 })', context);
 assert.equal(elements.get('#battingHistory').hidden, true);
 assert.match(elements.get('#historyStatus').textContent, /No MLB/);
+vm.runInContext('renderStatcast({ id: 1 })', context);
+assert.equal(elements.get('#statcastSeason').textContent, '2026 run values');
+assert.doesNotMatch(elements.get('#statcastRows').innerHTML, /Batting run value|Fielding run value|Baserunning run value/);
+const html = fs.readFileSync(path.join(root, 'player.html'), 'utf8');
+assert.doesNotMatch(html, /class="eyebrow"|Baseball stats, pared down/);
+assert.match(html, /<h2 id="seasonStatsLabel">Season stats<\/h2>/);
+assert.match(html, /<h2 id="statcastSeason">Run values<\/h2>/);
 
 async function main() {
   if (process.argv.includes('--live')) {
