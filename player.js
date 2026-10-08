@@ -45,6 +45,14 @@ function statBlock(label, value) {
   return `<div><dt>${label}</dt><dd>${value ?? "-"}</dd></div>`;
 }
 
+function leaderValue(value, player, field, group, season, eligible = true) {
+  return window.PLAYER_LEADERS?.format(value, player.mlbId ?? player.id, group, season, field, eligible) ?? escapeHistory(value);
+}
+
+function seasonStat(label, value, player, field, group) {
+  return statBlock(label, leaderValue(value, player, field, group, snapshot.season ?? new Date().getFullYear()));
+}
+
 function parseRate(value) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : 0;
@@ -73,7 +81,8 @@ function warBlock(player, measure, role) {
   const date = new Date(source?.updatedAt);
   const provider = measure === "fwar" ? "FanGraphs" : "Baseball-Reference";
   const updated = Number.isFinite(date.getTime()) ? `; updated ${date.toISOString()}` : "";
-  return `<div title="${provider} ${role.toLowerCase()} WAR${updated}"><dt>${measure === "fwar" ? "fWAR" : "bWAR"}</dt><dd>${value == null ? "-" : value.toFixed(1)}</dd></div>`;
+  const display = leaderValue(value == null ? "-" : value.toFixed(1), player, measure, role === "Pitching" ? "pitching" : "hitting", season);
+  return `<div title="${provider} ${role.toLowerCase()} WAR${updated}"><dt>${measure === "fwar" ? "fWAR" : "bWAR"}</dt><dd>${display}</dd></div>`;
 }
 
 function fmtFwar(player) {
@@ -247,10 +256,10 @@ function renderSeason(player) {
   const wrc = finiteValue(advancedStatsForPlayer(player)?.wrc ?? player.wrc);
   els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season`;
   els.season.innerHTML = [
-    statBlock("AVG", fmtRate(player.avg)),
-    statBlock("OPS", fmtRate(player.ops)),
-    statBlock("HR", player.hr),
-    statBlock("RBI", player.rbi),
+    seasonStat("AVG", fmtRate(player.avg), player, "avg", "hitting"),
+    seasonStat("OPS", fmtRate(player.ops), player, "ops", "hitting"),
+    seasonStat("HR", player.hr, player, "homeRuns", "hitting"),
+    seasonStat("RBI", player.rbi, player, "rbi", "hitting"),
     ...(wrc == null ? [] : [statBlock("wRC+", fmtIndexStat(wrc))]),
     warBlock(player, "fwar", "Batting"),
     warBlock(player, "bwar", "Batting")
@@ -260,10 +269,10 @@ function renderSeason(player) {
 function renderPitchingSeason(player) {
   els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season`;
   els.season.innerHTML = [
-    statBlock("IP", player.ip),
-    statBlock("ERA", fmtPitchingRate(player.era)),
-    statBlock("WHIP", fmtPitchingRate(player.whip)),
-    statBlock("SO", player.p_so),
+    seasonStat("IP", player.ip, player, "inningsPitched", "pitching"),
+    seasonStat("ERA", fmtPitchingRate(player.era), player, "era", "pitching"),
+    seasonStat("WHIP", fmtPitchingRate(player.whip), player, "whip", "pitching"),
+    seasonStat("SO", player.p_so, player, "strikeOuts", "pitching"),
     warBlock(player, "fwar", "Pitching"),
     warBlock(player, "bwar", "Pitching")
   ].join("");
@@ -425,9 +434,10 @@ function renderHistory(person, player) {
     document.querySelector(`#${key}HistoryRows`).innerHTML = rows.map((row) => {
       const team = row.isTotal ? `${row.numTeams ?? "Multiple"} teams` :
         teamById[String(row.team.id)]?.abbr ?? row.team.abbreviation ?? row.team.name;
-      const values = [row.stat.age, team, ...columns.map(([, field]) => row.stat[field]),
-        historyWar(player, row, "fwar", group), historyWar(player, row, "bwar", group)];
-      return `<tr class="${row.isTotal ? "history-total" : row.isStint ? "history-stint" : ""}"><th scope="row">${escapeHistory(row.season)}</th>${values.map((value) => `<td>${escapeHistory(value)}</td>`).join("")}</tr>`;
+      const cells = [escapeHistory(row.stat.age), escapeHistory(team),
+        ...columns.map(([, field]) => leaderValue(row.stat[field], player, field, group, row.season, !row.isStint)),
+        ...["fwar", "bwar"].map(field => leaderValue(historyWar(player, row, field, group), player, field, group, row.season, !row.isStint))];
+      return `<tr class="${row.isTotal ? "history-total" : row.isStint ? "history-stint" : ""}"><th scope="row">${escapeHistory(row.season)}</th>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
     }).join("");
     const career = careerStatsFromPerson(person, group);
     const values = career ? ["-", "-", ...columns.map(([, field]) => career[field]),
@@ -475,6 +485,13 @@ async function loadCareer(player) {
     if (!person) throw new Error("player not found");
     renderBio(person, player);
     renderHistory(person, player);
+    const jobs = ["hitting", "pitching"].flatMap(group =>
+      [...new Set(historyRows(person, group).map(row => row.season))].map(season => ({ group, season })));
+    window.PLAYER_LEADERS?.load(jobs, () => {
+      renderHistory(person, player);
+      if (player.hasBatting === false) renderPitchingSeason(player);
+      else renderSeason(players.find(item => String(item.mlbId ?? item.id) === String(player.mlbId ?? player.id)) ?? player);
+    }).catch(() => {});
   } catch (error) {
     els.historyStatus.textContent = "Season history unavailable from MLB right now.";
   }

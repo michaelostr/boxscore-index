@@ -28,6 +28,10 @@ Player pages load MLB regular-season, season-by-season batting and pitching hist
 
 Season summaries show only key statistics and verified wRC+ when available, without an estimate fallback. Each history table ends with MLB's official cumulative career row. Career WAR is summed once per season only when all seasons in that history have saved values; incomplete coverage displays a dash.
 
+Season leader values are bold with red AL, blue NL, or gold MLB superscripts. Gold takes precedence, and tooltips identify ties and league-specific leaderboard values. MLB's official leader feeds supply batting R, H, 2B, 3B, HR, RBI, SB, BB, AVG, OBP, SLG, OPS and pitching W, SV, IP, SO, ERA, WHIP. Rate statistics use the qualified pool; counting statistics use all players. MLB handles lower-is-better pitching rates and cross-league traded-player splits. Career totals and team-stint rows are never marked. Saved WAR snapshots support MLB-wide WAR leaders only, without inferring league WAR from current teams. Unsupported statistics remain unmarked.
+
+Leader feeds load automatically when player history loads. Results are cached in the browser for five minutes for the current year and 30 days for past years. Failed feeds leave their statistics unmarked. Run `node scripts/test_player_leaders.cjs` for display checks, or add `--live` to check MLB's live rankings.
+
 ## Statcast Profiles
 
 Player pages read `data/statcast.js`, keyed by season and MLB player ID, and display only run values and their leaderboard percentiles. When no official run-value percentile is supplied, the page calculates a midpoint rank within that metric's saved leaderboard and labels it as a leaderboard percentile. These ranks may differ from Savant's player-profile percentiles because the qualifying populations can differ. Missing data is shown as a dash, and older saved data is identified on the page.
