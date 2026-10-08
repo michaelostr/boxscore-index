@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const elements = new Map();
 const context = vm.createContext({ URLSearchParams, window: {
-  location: { search: '?id=1&season=2026' }, MLB_STATS_DATA: { season: 2026, players: [], teams: [] },
+  location: { search: '?id=1&season=2026' }, MLB_STATS_DATA: { season: 2026, players: [], teams: [{ id: '121', abbr: 'NYM', name: 'New York Mets' }] },
   WAR_DATA: { seasons: { '2026': { sources: { fwarBatting: { players: { '1': 0 } },
     bwarPitching: { players: { '1': -0.7 } } } } } }
 }, document: { querySelector(selector) {
@@ -18,7 +18,7 @@ vm.runInContext(source.slice(0, source.indexOf('const requestedType =')), contex
 const split = (season, team, stat = {}, extra = {}) => ({ season, team, stat,
   sport: { id: 1 }, gameType: 'R', ...extra });
 context.person = { stats: [{ type: { displayName: 'yearByYear' }, group: { displayName: 'hitting' }, splits: [
-  split('2026', { id: 2, name: '<Team>' }, { age: 25, hits: 3, avg: '.100' }),
+  split('2026', { id: 2, name: 'Team', abbreviation: '<Team>' }, { age: 25, hits: 3, avg: '.100' }),
   split('2025', { id: 2, name: 'Team B' }, { hits: 10 }),
   split('2025', { id: 3, name: 'Team C' }, { hits: 20 }),
   split('2025', undefined, { hits: 30, avg: '.300' }, { numTeams: 2 }),
@@ -49,7 +49,7 @@ vm.runInContext('window.WAR_DATA.seasons["2025"] = { sources: { fwarBatting: { p
 assert.equal(vm.runInContext('careerWar({ id: 1 }, historyRows(person, "hitting"), "fwar", "hitting")', context), '1.3');
 vm.runInContext('renderSeason({ id: 1, avg: .3, ops: .9, hr: 20, rbi: 60 })', context);
 assert.equal((elements.get('#seasonStats').innerHTML.match(/<dt>/g) ?? []).length, 6);
-assert.equal(elements.get('#seasonStatsLabel').textContent, '2026 season stats');
+assert.equal(elements.get('#seasonStatsLabel').textContent, '2026 Season Stats');
 assert.doesNotMatch(elements.get('#seasonStats').innerHTML, /wRC|est\./);
 vm.runInContext('renderSeason({ id: 1, wrc: 0 })', context);
 assert.match(elements.get('#seasonStats').innerHTML, /wRC\+<\/dt><dd>0/);
@@ -59,17 +59,21 @@ vm.runInContext('renderHistory({ stats: [] }, { id: 1 })', context);
 assert.equal(elements.get('#battingHistory').hidden, true);
 assert.match(elements.get('#historyStatus').textContent, /No MLB/);
 vm.runInContext('renderStatcast({ id: 1 })', context);
-assert.equal(elements.get('#statcastSeason').textContent, '2026 run values');
+assert.equal(elements.get('#statcastSeason').textContent, '2026 Run Values');
 assert.doesNotMatch(elements.get('#statcastRows').innerHTML, /Batting run value|Fielding run value|Baserunning run value/);
 const html = fs.readFileSync(path.join(root, 'player.html'), 'utf8');
 assert.doesNotMatch(html, /class="eyebrow"|Baseball stats, pared down/);
-assert.match(html, /<h2 id="seasonStatsLabel">Season stats<\/h2>/);
-assert.match(html, /<h2 id="statcastSeason">Run values<\/h2>/);
+assert.match(html, /<h2 id="seasonStatsLabel">Season Stats<\/h2>/);
+assert.match(html, /<h2 id="statcastSeason">Run Values<\/h2>/);
+vm.runInContext('renderBio({ currentTeam: { id: 121, name: "New York Mets" } }, { teamAbbr: "HOU" })', context);
+assert.match(elements.get('#bioGrid').innerHTML, /Team<\/dt><dd>NYM/);
+assert.doesNotMatch(elements.get('#bioGrid').innerHTML, /New York Mets|HOU/);
+assert.equal(vm.runInContext('teamAbbreviation({ name: "Unknown Team" })', context), '-');
 
 async function main() {
   if (process.argv.includes('--live')) {
     for (const [id, group] of [[665742, 'hitting'], [656427, 'pitching'], [660271, 'pitching']]) {
-      const response = await fetch(`https://statsapi.mlb.com/api/v1/people/${id}?hydrate=stats(group=[hitting,pitching],type=[career,yearByYear],sportIds=[1])`);
+      const response = await fetch(`https://statsapi.mlb.com/api/v1/people/${id}?hydrate=currentTeam,stats(group=[hitting,pitching],type=[career,yearByYear],sportIds=[1])`);
       assert.equal(response.ok, true);
       context.person = (await response.json()).people[0];
       const liveRows = vm.runInContext(`historyRows(person, '${group}')`, context);
