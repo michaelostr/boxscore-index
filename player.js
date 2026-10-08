@@ -431,6 +431,8 @@ function historyWar(player, row, measure, group) {
   return value == null ? "-" : value.toFixed(1);
 }
 
+const expandedHistorySeasons = new Set();
+
 function renderHistory(person, player) {
   let count = 0;
   for (const group of ["hitting", "pitching"]) {
@@ -447,14 +449,31 @@ function renderHistory(person, player) {
         ["SO", "strikeOuts"], ["ERA", "era"], ["WHIP", "whip"]];
     const labels = ["Season", "Age", "Team", ...columns.map(([label]) => label), "fWAR", "bWAR"];
     document.querySelector(`#${key}HistoryHead`).innerHTML = `<tr>${labels.map((label) => `<th scope="col">${label}</th>`).join("")}</tr>`;
-    document.querySelector(`#${key}HistoryRows`).innerHTML = rows.map((row) => {
+    const body = document.querySelector(`#${key}HistoryRows`);
+    body.innerHTML = rows.map((row, index) => {
+      const expanded = expandedHistorySeasons.has(`${group}-${row.season}`);
+      const stintIds = rows.flatMap((item, stintIndex) => item.season === row.season && item.isStint ? [`${key}-stint-${stintIndex}`] : []);
       const team = row.isTotal ? `${row.numTeams ?? "Multiple"} teams` :
         teamAbbreviation(row.team, "-", row.season);
       const cells = [escapeHistory(row.stat.age), escapeHistory(team),
         ...columns.map(([, field]) => leaderValue(row.stat[field], player, field, group, row.season, !row.isStint)),
         ...["fwar", "bwar"].map(field => leaderValue(historyWar(player, row, field, group), player, field, group, row.season, !row.isStint))];
-      return `<tr class="${row.isTotal ? "history-total" : row.isStint ? "history-stint" : ""}"><th scope="row">${escapeHistory(row.season)}</th>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
+      const season = row.isTotal && stintIds.length
+        ? `<button type="button" class="history-expand" data-history-season="${escapeHistory(row.season)}" aria-expanded="${expanded}" aria-controls="${stintIds.join(" ")}" aria-label="${expanded ? "Hide" : "Show"} ${row.season} ${key} team stints"><span aria-hidden="true">&#9656;</span>${escapeHistory(row.season)}</button>`
+        : escapeHistory(row.season);
+      const attributes = row.isStint ? ` id="${key}-stint-${index}"${expanded ? "" : " hidden"}` : "";
+      return `<tr class="${row.isTotal ? "history-total" : row.isStint ? "history-stint" : ""}"${attributes}><th scope="row">${season}</th>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
     }).join("");
+    body.onclick = (event) => {
+      const button = event.target.closest("button[data-history-season]");
+      if (!button) return;
+      const season = button.dataset.historySeason;
+      const expansionKey = `${group}-${season}`;
+      if (expandedHistorySeasons.has(expansionKey)) expandedHistorySeasons.delete(expansionKey);
+      else expandedHistorySeasons.add(expansionKey);
+      renderHistory(person, player);
+      body.querySelector?.(`button[data-history-season="${season}"]`)?.focus();
+    };
     const career = careerStatsFromPerson(person, group);
     const values = career ? ["-", "-", ...columns.map(([, field]) => career[field]),
       careerWar(player, rows, "fwar", group), careerWar(player, rows, "bwar", group)] : [];
