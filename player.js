@@ -16,6 +16,7 @@ const els = {
   seasonLabel: document.querySelector("#seasonStatsLabel"),
   historyPanel: document.querySelector("#historyPanel"),
   historyStatus: document.querySelector("#historyStatus"),
+  leaderKey: document.querySelector("#leaderKey"),
   resultsPanel: document.querySelector("#searchResultsPanel"),
   results: document.querySelector("#searchResults"),
   bioPanel: document.querySelector("#bioGrid"),
@@ -49,10 +50,6 @@ function leaderValue(value, player, field, group, season, eligible = true) {
   return window.PLAYER_LEADERS?.format(value, player.mlbId ?? player.id, group, season, field, eligible) ?? escapeHistory(value);
 }
 
-function seasonStat(label, value, player, field, group) {
-  return statBlock(label, leaderValue(value, player, field, group, snapshot.season ?? new Date().getFullYear()));
-}
-
 function parseRate(value) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : 0;
@@ -76,13 +73,7 @@ function savedWar(player, measure, role) {
 
 function warBlock(player, measure, role) {
   const value = savedWar(player, measure, role);
-  const season = String(params.get("season") || snapshot.season || new Date().getFullYear());
-  const source = window.WAR_DATA?.seasons?.[season]?.sources?.[measure + role];
-  const date = new Date(source?.updatedAt);
-  const provider = measure === "fwar" ? "FanGraphs" : "Baseball-Reference";
-  const updated = Number.isFinite(date.getTime()) ? `; updated ${date.toISOString()}` : "";
-  const display = leaderValue(value == null ? "-" : value.toFixed(1), player, measure, role === "Pitching" ? "pitching" : "hitting", season);
-  return `<div title="${provider} ${role.toLowerCase()} WAR${updated}"><dt>${measure === "fwar" ? "fWAR" : "bWAR"}</dt><dd>${display}</dd></div>`;
+  return statBlock(measure === "fwar" ? "fWAR" : "bWAR", value == null ? "-" : value.toFixed(1));
 }
 
 function fmtFwar(player) {
@@ -230,6 +221,7 @@ function searchMatches() {
 
 function renderSearchResults(matches) {
   els.historyPanel.hidden = true;
+  els.leaderKey.hidden = true;
   document.querySelector("#statcastPanel").hidden = true;
   els.resultsPanel.hidden = false;
   els.bioPanel.hidden = true;
@@ -256,10 +248,10 @@ function renderSeason(player) {
   const wrc = finiteValue(advancedStatsForPlayer(player)?.wrc ?? player.wrc);
   els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season`;
   els.season.innerHTML = [
-    seasonStat("AVG", fmtRate(player.avg), player, "avg", "hitting"),
-    seasonStat("OPS", fmtRate(player.ops), player, "ops", "hitting"),
-    seasonStat("HR", player.hr, player, "homeRuns", "hitting"),
-    seasonStat("RBI", player.rbi, player, "rbi", "hitting"),
+    statBlock("AVG", fmtRate(player.avg)),
+    statBlock("OPS", fmtRate(player.ops)),
+    statBlock("HR", player.hr),
+    statBlock("RBI", player.rbi),
     ...(wrc == null ? [] : [statBlock("wRC+", fmtIndexStat(wrc))]),
     warBlock(player, "fwar", "Batting"),
     warBlock(player, "bwar", "Batting")
@@ -269,10 +261,10 @@ function renderSeason(player) {
 function renderPitchingSeason(player) {
   els.seasonLabel.textContent = `${snapshot.season ?? "Current"} season`;
   els.season.innerHTML = [
-    seasonStat("IP", player.ip, player, "inningsPitched", "pitching"),
-    seasonStat("ERA", fmtPitchingRate(player.era), player, "era", "pitching"),
-    seasonStat("WHIP", fmtPitchingRate(player.whip), player, "whip", "pitching"),
-    seasonStat("SO", player.p_so, player, "strikeOuts", "pitching"),
+    statBlock("IP", player.ip),
+    statBlock("ERA", fmtPitchingRate(player.era)),
+    statBlock("WHIP", fmtPitchingRate(player.whip)),
+    statBlock("SO", player.p_so),
     warBlock(player, "fwar", "Pitching"),
     warBlock(player, "bwar", "Pitching")
   ].join("");
@@ -489,8 +481,6 @@ async function loadCareer(player) {
       [...new Set(historyRows(person, group).map(row => row.season))].map(season => ({ group, season })));
     window.PLAYER_LEADERS?.load(jobs, () => {
       renderHistory(person, player);
-      if (player.hasBatting === false) renderPitchingSeason(player);
-      else renderSeason(players.find(item => String(item.mlbId ?? item.id) === String(player.mlbId ?? player.id)) ?? player);
     }).catch(() => {});
   } catch (error) {
     els.historyStatus.textContent = "Season history unavailable from MLB right now.";
@@ -543,6 +533,7 @@ if (player) {
       els.bioPanel.hidden = true;
       els.seasonPanel.hidden = true;
       els.historyPanel.hidden = true;
+      els.leaderKey.hidden = true;
     });
   }
 }

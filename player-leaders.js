@@ -15,7 +15,6 @@ window.PLAYER_LEADERS = (() => {
   const scopes = [['MLB', null, 'the major leagues'], ['AL', 103, 'the American League'], ['NL', 104, 'the National League']];
   const records = new Map();
   const requests = new Map();
-  let currentSeasonEnd = null;
   const escape = value => String(value ?? '-').replace(/[&<>"']/g, char =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
@@ -58,10 +57,6 @@ window.PLAYER_LEADERS = (() => {
   }
 
   async function load(jobs, onUpdate) {
-    try {
-      const response = await fetch(`https://statsapi.mlb.com/api/v1/seasons/${new Date().getFullYear()}?sportId=1`);
-      if (response.ok) currentSeasonEnd = (await response.json()).seasons?.[0]?.regularSeasonEndDate ?? null;
-    } catch (_) {}
     // Limit concurrent seasons while keeping each season's six small feeds together.
     const queue = [...jobs];
     async function worker() {
@@ -96,12 +91,8 @@ window.PLAYER_LEADERS = (() => {
         value: own.toFixed(1), tied: values.filter(v => v === best).length > 1, saved: true };
     }
     if (!winner) return plain;
-    const year = new Date().getFullYear();
-    const finished = Number(season) < year || (Number(season) === year && currentSeasonEnd &&
-      new Date().toISOString().slice(0, 10) > currentSeasonEnd);
-    const verb = finished ? 'Led' : 'Leads';
-    const title = `${verb} ${winner.scopeName} in ${names[category] ?? category} (${season})${winner.tied ? '; tied for the lead' : ''}; leaderboard value: ${winner.value}${winner.saved ? '; saved WAR snapshot' : ''}`;
-    return `<span class="stat-leader leader-${winner.scope.toLowerCase()}" title="${escape(title)}" aria-label="${escape(`${value}; ${title}`)}">${plain}<sup aria-hidden="true">${winner.scope}</sup></span>`;
+    const description = `${value}; leader in ${names[category] ?? category} for ${winner.scopeName} (${season})${winner.tied ? '; tied for the lead' : ''}${winner.saved ? '; saved WAR snapshot' : ''}`;
+    return `<span class="stat-leader leader-${winner.scope.toLowerCase()}" aria-label="${escape(description)}">${plain}</span>`;
   }
 
   return { load, format, parse };
