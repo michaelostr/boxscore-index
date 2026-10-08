@@ -25,7 +25,7 @@ context.person = { stats: [{ type: { displayName: 'yearByYear' }, group: { displ
   split('2024', { id: 4 }, {}, { sport: { id: 11 } }),
   split('2024', { id: 4 }, {}, { gameType: 'P' })
 ] }, { type: { displayName: 'career' }, group: { displayName: 'pitching' }, splits: [{ stat: { wins: 2 } }] },
-{ type: { displayName: 'career' }, group: { displayName: 'hitting' }, splits: [{ stat: { hits: 33 } }] }] };
+{ type: { displayName: 'career' }, group: { displayName: 'hitting' }, splits: [{ stat: { hits: 33, avg: '.250' } }] }] };
 const rows = vm.runInContext('historyRows(person, "hitting")', context);
 assert.equal(rows.length, 4);
 assert.equal(rows[0].season, '2025');
@@ -41,6 +41,19 @@ vm.runInContext('renderHistory(person, { id: 1 })', context);
 assert.match(elements.get('#battingHistoryRows').innerHTML, /&lt;Team&gt;/);
 assert.match(elements.get('#battingHistoryRows').innerHTML, /2 teams/);
 assert.equal(elements.get('#pitchingHistory').hidden, true);
+assert.match(elements.get('#battingHistoryTotals').innerHTML, /Career/);
+assert.match(elements.get('#battingHistoryTotals').innerHTML, /<td>33<\/td>/);
+assert.match(elements.get('#battingHistoryTotals').innerHTML, /<td>\.250<\/td>/);
+assert.equal(vm.runInContext('careerWar({ id: 1 }, historyRows(person, "hitting"), "fwar", "hitting")', context), '-');
+vm.runInContext('window.WAR_DATA.seasons["2025"] = { sources: { fwarBatting: { players: { "1": 1.25 } } } }', context);
+assert.equal(vm.runInContext('careerWar({ id: 1 }, historyRows(person, "hitting"), "fwar", "hitting")', context), '1.3');
+vm.runInContext('renderSeason({ id: 1, avg: .3, ops: .9, hr: 20, rbi: 60 })', context);
+assert.equal((elements.get('#seasonStats').innerHTML.match(/<dt>/g) ?? []).length, 6);
+assert.doesNotMatch(elements.get('#seasonStats').innerHTML, /wRC|est\./);
+vm.runInContext('renderSeason({ id: 1, wrc: 0 })', context);
+assert.match(elements.get('#seasonStats').innerHTML, /wRC\+<\/dt><dd>0/);
+vm.runInContext('renderPitchingSeason({ id: 1, ip: "10.2", era: 2.5, whip: 1.1, p_so: 12 })', context);
+assert.equal((elements.get('#seasonStats').innerHTML.match(/<dt>/g) ?? []).length, 6);
 vm.runInContext('renderHistory({ stats: [] }, { id: 1 })', context);
 assert.equal(elements.get('#battingHistory').hidden, true);
 assert.match(elements.get('#historyStatus').textContent, /No MLB/);
@@ -55,6 +68,11 @@ async function main() {
       assert.ok(liveRows.length > 1);
       assert.ok(vm.runInContext(`careerStatsFromPerson(person, '${group}')`, context));
       vm.runInContext(`renderHistory(person, { mlbId: ${id} })`, context);
+      const key = group === 'hitting' ? 'batting' : 'pitching';
+      assert.match(elements.get(`#${key}HistoryTotals`).innerHTML, /Career/);
+      const headings = (elements.get(`#${key}HistoryHead`).innerHTML.match(/<th /g) ?? []).length;
+      const cells = (elements.get(`#${key}HistoryTotals`).innerHTML.match(/<td>/g) ?? []).length;
+      assert.equal(cells + 1, headings);
       if (id === 665742) {
         const traded = liveRows.filter(row => row.season === '2022');
         assert.equal(traded.length, 3);
